@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Fotheged Translator</title>
+<meta name="theme-color" content="#1d2327">
+<meta name="description" content="Translate English into Fotheged, the scholarly tongue of the Avaggdu.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+</head>
+<body>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: a scribe's desk. English vellum on the left, the carved Fotheged line on the right, stone tabs above. */
+:root{
+  --stone:#e4e6e1; --slab:#f3f4f0; --ink:#1d2327; --ink-soft:#4e5a60; --rule:#c7ccc6;
+  --verdigris:#2d6b64; --verdigris-soft:#d6e7e3; --garnet:#9b2f3a; --garnet-soft:#f3dcdf;
+  --display:"IM Fell English", "Iowan Old Style", Georgia, serif;
+  --body:"Alegreya Sans", "Gill Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --stone:#15191b; --slab:#1e2427; --ink:#e3e6e2; --ink-soft:#a3adb0; --rule:#343d41;
+  --verdigris:#6fb8ad; --verdigris-soft:#1f3936; --garnet:#e3828c; --garnet-soft:#3d2226; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --stone:#15191b; --slab:#1e2427; --ink:#e3e6e2; --ink-soft:#a3adb0; --rule:#343d41;
+  --verdigris:#6fb8ad; --verdigris-soft:#1f3936; --garnet:#e3828c; --garnet-soft:#3d2226; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--stone);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;margin:0}
+.wrap{max-width:1120px;margin:0 auto;padding-inline:16px;padding-block:28px 48px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px 24px;border-bottom:2px solid var(--ink);padding-bottom:14px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(2rem,5vw,3rem);line-height:1;margin:0;text-wrap:balance}
+.sub{color:var(--ink-soft);margin:6px 0 0;max-width:60ch}
+.headrunes{color:var(--ink);opacity:.85}
+nav{display:flex;gap:4px;margin:20px 0 18px;flex-wrap:wrap}
+nav button{font:500 15px var(--body);letter-spacing:.04em;text-transform:uppercase;background:transparent;color:var(--ink-soft);border:1px solid var(--rule);border-radius:2px;padding:8px 16px;cursor:pointer}
+nav button[aria-selected="true"]{background:var(--ink);color:var(--stone);border-color:var(--ink)}
+nav button:focus-visible,button:focus-visible,textarea:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--verdigris);outline-offset:2px}
+.desk{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:20px}
+@media (max-width:820px){.desk{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--slab);border:1px solid var(--rule);border-radius:3px;padding:18px;min-width:0;display:flex;flex-direction:column;gap:14px}
+.label{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-soft);margin:0}
+textarea{width:100%;min-height:150px;resize:vertical;font:18px/1.5 var(--body);color:var(--ink);background:var(--stone);border:1px solid var(--rule);border-radius:2px;padding:12px}
+.samples{display:flex;flex-wrap:wrap;gap:6px}
+.samples button{font:14px var(--body);background:transparent;border:1px dashed var(--rule);color:var(--ink-soft);border-radius:2px;padding:4px 10px;cursor:pointer;text-align:left}
+.samples button:hover{border-color:var(--verdigris);color:var(--ink)}
+.opts{display:flex;flex-wrap:wrap;gap:8px 20px}
+.opts label{display:flex;gap:8px;align-items:flex-start;cursor:pointer;max-width:32ch}
+.opts input{margin-top:5px;accent-color:var(--verdigris)}
+.opts small{display:block;color:var(--ink-soft);font-size:13px;line-height:1.35}
+.out{font-family:var(--display);font-size:clamp(1.4rem,3vw,1.9rem);line-height:1.35;margin:0;min-height:2.6em;word-wrap:break-word}
+.out .unk{color:var(--garnet);background:var(--garnet-soft);padding:0 4px;border-radius:2px;font-style:italic}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.btn{font:500 14px var(--body);background:var(--verdigris);color:var(--slab);border:0;border-radius:2px;padding:7px 14px;cursor:pointer}
+.status{font-size:14px;color:var(--ink-soft)}
+.phonbox{background:var(--verdigris-soft);border-radius:2px;padding:10px 14px;display:flex;flex-direction:column;gap:4px}
+.phon{font:500 19px/1.45 var(--body);letter-spacing:.02em;margin:0;word-wrap:break-word}
+.voicebar{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:13px;color:var(--ink-soft)}
+.voicebar label{display:flex;align-items:center;gap:6px;min-width:0}
+.voicebar select{font:13px var(--body);color:var(--ink);background:var(--slab);border:1px solid var(--rule);border-radius:2px;padding:3px 6px;max-width:220px}
+.voicebar input{accent-color:var(--verdigris)}
+.btn.speak{padding:4px 12px;font-size:13px}
+.phonkey{font-size:13px;color:var(--ink-soft);margin:0}
+.phonkey b{color:var(--ink);font-weight:700}
+.runes{overflow-x:auto;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:12px 0;color:var(--ink)}
+.runes svg{display:block}
+.pairs{display:flex;flex-wrap:wrap;gap:6px}
+.pair{display:flex;flex-direction:column;border:1px solid var(--rule);border-radius:2px;padding:4px 8px;background:var(--stone);min-width:0}
+.pair b{font-family:var(--display);font-weight:400;font-size:17px}
+.pair span{font-size:12px;color:var(--ink-soft)}
+.pair.small{opacity:.75}
+.pair.unknown{border-color:var(--garnet);background:var(--garnet-soft)}
+.pair.unknown b{color:var(--garnet);font-style:italic}
+.pair.name b{color:var(--verdigris)}
+.missing{font-size:14px;color:var(--garnet);margin:0}
+.dicttools{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.dicttools input,.dicttools select{font:16px var(--body);color:var(--ink);background:var(--slab);border:1px solid var(--rule);border-radius:2px;padding:8px 10px}
+.dicttools input{flex:1 1 260px;min-width:0}
+.tablewrap{overflow-x:auto;background:var(--slab);border:1px solid var(--rule);border-radius:3px}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:7px 12px;border-bottom:1px solid var(--rule);vertical-align:top}
+th{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-soft);position:sticky;top:0;background:var(--slab)}
+td.fg{font-family:var(--display);font-size:18px;white-space:nowrap}
+td.from{color:var(--ink-soft);font-size:14px}
+.count{color:var(--ink-soft);font-size:14px;margin:8px 0 0}
+.runegrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.rune{background:var(--slab);border:1px solid var(--rule);border-radius:3px;padding:12px 8px;text-align:center;color:var(--ink)}
+.rune svg{display:block;margin:0 auto 6px}
+.rune b{font-size:18px;display:block}
+.rune span{display:block;font-size:13px;color:var(--ink-soft)}
+.rune i{font-family:var(--display);font-size:16px}
+.note{color:var(--ink-soft);max-width:70ch}
+@media (prefers-reduced-motion: no-preference){.out{transition:opacity .15s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Fotheged</h1>
+      <p class="sub">The scholarly tongue of the Avaggdu, in which the Tormegedlun is written. Type English to see it in Fotheged and in the rooted runes.</p>
+    </div>
+    <div class="headrunes" id="headrunes" aria-hidden="true"></div>
+  </header>
+
+  <nav role="tablist" aria-label="Sections">
+    <button role="tab" id="tab-translate" aria-selected="true" data-tab="translate">Translate</button>
+    <button role="tab" id="tab-dictionary" aria-selected="false" data-tab="dictionary">Dictionary</button>
+    <button role="tab" id="tab-runes" aria-selected="false" data-tab="runes">Runes</button>
+  </nav>
+
+  <section id="translate">
+    <div class="desk">
+      <div class="panel">
+        <p class="label"><label for="en">English</label></p>
+        <textarea id="en" spellcheck="true">Ged carved ten men from the stone of the mountain. Irik wrote the first book, and his brothers did not forget it.</textarea>
+        <div>
+          <p class="label">Try a line</p>
+          <div class="samples" id="samples"></div>
+        </div>
+        <div class="opts">
+          <label for="chron"><input type="checkbox" id="chron"><span>Chronicle past<small>Past events take -tor, "it is recorded that", as in the Tormegedlun.</small></span></label>
+          <label for="bryn"><input type="checkbox" id="bryn"><span>Brynndu voice<small>The softer hill speech: KH becomes H and hard doubled endings soften.</small></span></label>
+        </div>
+      </div>
+      <div class="panel" aria-live="polite">
+        <p class="label">Fotheged</p>
+        <p class="out" id="out"></p>
+        <div class="row"><button class="btn" id="copy" type="button">Copy text</button><span class="status" id="status"></span></div>
+        <div class="phonbox">
+          <div class="row"><p class="label">Say it</p><button class="btn speak" id="speak" type="button" hidden>Speak</button><span class="status" id="speakstatus"></span></div>
+          <div class="voicebar" id="voicebar" hidden>
+            <label for="voice">Voice <select id="voice"></select></label>
+            <label for="rate">Pace <input type="range" id="rate" min="0.5" max="1.1" step="0.05" value="0.8"></label>
+            <label for="pitch">Pitch <input type="range" id="pitch" min="0.4" max="1.3" step="0.05" value="0.85"></label>
+            <label for="accent">Accent <select id="accent"><option value="es">Spanish voice: taps the R, closest sounds</option><option value="en">English voice</option></select></label>
+            <label for="vmode" id="vmodewrap">Read <select id="vmode"><option value="say">the Say it spelling</option><option value="fg">the Fotheged spelling</option></select></label>
+          </div>
+          <p class="phon" id="phon"></p>
+          <p class="phonkey">Capitals show the stressed syllable. <b>th</b> as in thin, <b>kh</b> as in loch, <b>sh</b> as in ship, <b>ih</b> as in bin, <b>r</b> a quick tap close to d, <b>rr</b> rolled<span id="phonbryn" hidden>; in the Brynndu voice <b>rr</b> softens to a tap and <b>dh</b> is the th of this</span>.</p>
+        </div>
+        <p class="label">In runes</p>
+        <div class="runes" id="runes"></div>
+        <p class="label">Word by word</p>
+        <div class="pairs" id="pairs"></div>
+        <p class="missing" id="missing" hidden></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="dictionary" hidden>
+    <div class="dicttools">
+      <input id="q" type="search" placeholder="Search English or Fotheged, such as stone or skal" aria-label="Search the dictionary">
+      <select id="theme" aria-label="Theme"></select>
+    </div>
+    <div class="tablewrap"><table><thead><tr><th>Fotheged</th><th>English</th><th>Kind</th><th>From</th></tr></thead><tbody id="dict"></tbody></table></div>
+    <p class="count" id="count"></p>
+  </section>
+
+  <section id="runes-sec" hidden>
+    <p class="note">Every rune with a stave ends in a forked root. The vowels and S stand on a short taproot. TH, KH and CH are single runes. A dot divides words and a double dot ends a sentence.</p>
+    <div class="runegrid" id="runegrid"></div>
+  </section>
+</div>
+
+<script>
+var LEX = {"rows": [{"w": "Avaggdu", "g": "Avaggdu, dwarf", "p": ["n"], "n": "avagg \"carved\" + du \"folk\": the carved folk", "c": "Lore, peoples and places"}, {"w": "du", "g": "folk, race, people", "p": ["n"], "n": "worn down from Th. dan", "c": "Lore, peoples and places"}, {"w": "Brynndu", "g": "Brynndu, hill folk", "p": ["n"], "n": "brynn \"hill\" + du", "c": "Lore, peoples and places"}, {"w": "Haidu", "g": "Eorman, Eormen, human", "p": ["n"], "n": "hai \"tall\" + du: the tall folk (everyday name)", "c": "Lore, peoples and places"}, {"w": "Geldu", "g": "the Eormen (formal, in the Tormegedlun)", "p": ["n"], "n": "gel \"cold\" + du: the folk from beyond the ice", "c": "Lore, peoples and places"}, {"w": "Skarthul", "g": "Gothgaard", "p": ["name"], "n": "skar \"sword\" + thul \"guard\": the sword that guards", "c": "Lore, peoples and places"}, {"w": "skarlun", "g": "Gothgaardian blade, a line-sword", "p": ["n"], "n": "skar + lun \"line\": a sword that carries a lineage's skill", "c": "Lore, peoples and places"}, {"w": "thondath", "g": "mountain pass, pass", "p": ["n"], "n": "thon \"through\" + dath \"road\"", "c": "Lore, peoples and places"}, {"w": "gelskalgor", "g": "glacier", "p": ["n"], "n": "gelskal \"ice\" + gor: the great ice", "c": "Lore, peoples and places"}, {"w": "Kradu", "g": "Corvus", "p": ["n"], "n": "kra \"raven\" + du", "c": "Lore, peoples and places"}, {"w": "Thedu", "g": "Story-folk", "p": ["n"], "n": "the \"tale\" + du", "c": "Lore, peoples and places"}, {"w": "Ged", "g": "Ged", "p": ["name"], "n": "", "c": "Lore, peoples and places"}, {"w": "Theged", "g": "the Tale of Ged (the book of Ged's own life)", "p": ["name"], "n": "the e Ged", "c": "Lore, peoples and places"}, {"w": "Gedlun", "g": "Ged's line, all the Avaggdu as his descendants", "p": ["n"], "n": "Ged + lun \"line\"", "c": "Lore, peoples and places"}, {"w": "Tormegedlun", "g": "Tormegedlun, the Book of Ged's Line", "p": ["name"], "n": "torm e Ged lun", "c": "Lore, peoples and places"}, {"w": "Fotheged", "g": "Fotheged, the scholarly tongue", "p": ["name"], "n": "foth e Ged: the word of Ged", "c": "Lore, peoples and places"}, {"w": "Thelun", "g": "Thelun, the Teller's tongue", "p": ["name"], "n": "kept unchanged; it is not spoken", "c": "Lore, peoples and places"}, {"w": "Urthe", "g": "Urthe", "p": ["name"], "n": "kept; Avaggdu say OOR-theh", "c": "Lore, peoples and places"}, {"w": "Urchen", "g": "Lore, magic", "p": ["n"], "n": "Th. Urken", "c": "Lore, peoples and places"}, {"w": "Urchenrin", "g": "Lore-wielder", "p": ["n"], "n": "Th. Urkenran", "c": "Lore, peoples and places"}, {"w": "Therrin", "g": "the Teller", "p": ["n"], "n": "Th. Theran", "c": "Lore, peoples and places"}, {"w": "Thulrin Krar", "g": "the Constable of Ravens", "p": ["name"], "n": "Th. Thulran Krar", "c": "Lore, peoples and places"}, {"w": "Skyald", "g": "Skyald", "p": ["name"], "n": "", "c": "Lore, peoples and places"}, {"w": "Uthrekrech", "g": "Uthrekrech, the Underhall of the Roots", "p": ["name"], "n": "uthr e krech", "c": "Lore, peoples and places"}, {"w": "Krechur e Urthe", "g": "the Roots of the World", "p": ["name"], "n": "roots of Urthe", "c": "Lore, peoples and places"}, {"w": "Hulltormur", "g": "the Hall of Scribes", "p": ["name"], "n": "hull \"hall\" + tormur \"records\"", "c": "Lore, peoples and places"}, {"w": "Krabur", "g": "Rivenrook", "p": ["name"], "n": "kra + bur: raven-house", "c": "Lore, peoples and places"}, {"w": "Khaelnokh", "g": "the Black Diamond, birthplace of Ged", "p": ["name"], "n": "khael + nokh", "c": "Lore, peoples and places"}, {"w": "Orrugor e Orrolur", "g": "the Age of Scrolls", "p": ["name"], "n": "age of scrolls", "c": "Lore, peoples and places"}, {"w": "uthr", "g": "underhall, stone citadel", "p": ["n"], "n": "", "c": "Lore, peoples and places"}, {"w": "krech", "g": "root of a mountain, foundation", "p": ["n"], "n": "", "c": "Lore, peoples and places"}, {"w": "krechsyn", "g": "rootseer", "p": ["n"], "n": "krech + syn \"see\"", "c": "Lore, peoples and places"}, {"w": "hamrin", "g": "shaman", "p": ["n"], "n": "ham \"spirit\" + -rin", "c": "Lore, peoples and places"}, {"w": "torm", "g": "book, record, chronicle; to record", "p": ["n", "v"], "n": "", "c": "The record and scholarship"}, {"w": "tormrin", "g": "scribe, recorder", "p": ["n"], "n": "torm + -rin", "c": "The record and scholarship"}, {"w": "tormuth", "g": "library", "p": ["n"], "n": "torm + -uth \"place\"", "c": "The record and scholarship"}, {"w": "pell", "g": "vellum, page, skin, hide", "p": ["n"], "n": "", "c": "The record and scholarship"}, {"w": "nokhuma", "g": "ink", "p": ["n"], "n": "nokh \"dark\" + uma \"water\"", "c": "The record and scholarship"}, {"w": "pinn", "g": "quill, pen", "p": ["n"], "n": "", "c": "The record and scholarship"}, {"w": "rist", "g": "rune, letter; to write, to carve runes", "p": ["n", "v"], "n": "", "c": "The record and scholarship"}, {"w": "orrol", "g": "scroll", "p": ["n"], "n": "", "c": "The record and scholarship"}, {"w": "foth", "g": "word, speech, language", "p": ["n"], "n": "Th. voth", "c": "The record and scholarship"}, {"w": "fo", "g": "voice; to speak, to say", "p": ["n", "v"], "n": "Th. vo", "c": "The record and scholarship"}, {"w": "the", "g": "tale, story; to tell", "p": ["n", "v"], "n": "Th. the", "c": "The record and scholarship"}, {"w": "thethe", "g": "to retell", "p": ["v"], "n": "doubling of the", "c": "The record and scholarship"}, {"w": "oth", "g": "name; to name", "p": ["n", "v"], "n": "Th. oth", "c": "The record and scholarship"}, {"w": "lath", "g": "to read", "p": ["v"], "n": "", "c": "The record and scholarship"}, {"w": "chen", "g": "knowledge; to know", "p": ["n", "v"], "n": "Th. ken", "c": "The record and scholarship"}, {"w": "chenrin", "g": "scholar", "p": ["n"], "n": "chen + -rin", "c": "The record and scholarship"}, {"w": "chenuth", "g": "school", "p": ["n"], "n": "chen + -uth", "c": "The record and scholarship"}, {"w": "selchen", "g": "wisdom; wise", "p": ["n", "adj"], "n": "sel \"true\" + chen", "c": "The record and scholarship"}, {"w": "darr", "g": "to teach", "p": ["v"], "n": "", "c": "The record and scholarship"}, {"w": "darrin", "g": "teacher", "p": ["n"], "n": "darr + -rin", "c": "The record and scholarship"}, {"w": "lemm", "g": "to learn, to study", "p": ["v"], "n": "", "c": "The record and scholarship"}, {"w": "lemmrin", "g": "student", "p": ["n"], "n": "lemm + -rin", "c": "The record and scholarship"}, {"w": "mund", "g": "memory; to remember", "p": ["n", "v"], "n": "", "c": "The record and scholarship"}, {"w": "namund", "g": "to forget", "p": ["v"], "n": "na + mund", "c": "The record and scholarship"}, {"w": "dulm", "g": "secret; to hide; hidden", "p": ["n", "v", "adj"], "n": "", "c": "The record and scholarship"}, {"w": "ilud", "g": "to reveal", "p": ["v"], "n": "ilu \"light\" + d", "c": "The record and scholarship"}, {"w": "thetorm", "g": "history", "p": ["n"], "n": "the + torm", "c": "The record and scholarship"}, {"w": "thrafoth", "g": "oath, pledge", "p": ["n"], "n": "thra + foth: a bound word", "c": "The record and scholarship"}, {"w": "dalfoth", "g": "pact, agreement", "p": ["n"], "n": "dal \"with\" + foth", "c": "The record and scholarship"}, {"w": "skif", "g": "trade, barter; to trade", "p": ["n", "v"], "n": "", "c": "The record and scholarship"}, {"w": "lunthe", "g": "fate", "p": ["n"], "n": "lun \"line\" + the \"tale\"", "c": "The record and scholarship"}, {"w": "skal", "g": "stone, rock", "p": ["n"], "n": "Th. skal", "c": "Stone, metal and craft"}, {"w": "skalahai", "g": "mountain", "p": ["n"], "n": "Th. skalahai", "c": "Stone, metal and craft"}, {"w": "brynn", "g": "hill", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "gath", "g": "cave", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "dolm", "g": "tunnel, passage", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "fell", "g": "cliff", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "vyr", "g": "vein of ore, ore", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "isk", "g": "iron", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "solm", "g": "gold", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "nelm", "g": "silver", "p": ["n"], "n": "nel \"moon\" + m", "c": "Stone, metal and craft"}, {"w": "rutha", "g": "copper", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "khorr", "g": "steel", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "malm", "g": "metal", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "khael", "g": "diamond", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "skaldirra", "g": "gem, jewel", "p": ["n"], "n": "skal + dirra: stone-star", "c": "Stone, metal and craft"}, {"w": "thrys", "g": "crystal", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "bleth", "g": "marble", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "nokhskal", "g": "coal", "p": ["n"], "n": "dark stone", "c": "Stone, metal and craft"}, {"w": "sil", "g": "salt", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "mol", "g": "clay", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "sath", "g": "sand", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "doth", "g": "dust", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "akh", "g": "pick, pickaxe", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "trokh", "g": "hammer", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "skeft", "g": "chisel", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "hondur", "g": "anvil", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "forruth", "g": "forge, hearth", "p": ["n"], "n": "forru \"burn\" + -uth", "c": "Stone, metal and craft"}, {"w": "gurm", "g": "mould, cast; to cast metal", "p": ["n", "v"], "n": "", "c": "Stone, metal and craft"}, {"w": "avag", "g": "to carve, to sculpt", "p": ["v"], "n": "", "c": "Stone, metal and craft"}, {"w": "avagrin", "g": "carver, sculptor", "p": ["n"], "n": "avag + -rin", "c": "Stone, metal and craft"}, {"w": "dom", "g": "to make, to do, to shape, to build", "p": ["v"], "n": "Th. dom", "c": "Stone, metal and craft"}, {"w": "domrin", "g": "builder, engineer, shaper", "p": ["n"], "n": "dom + -rin; also the parent who shapes young from stone", "c": "Stone, metal and craft"}, {"w": "skalrin", "g": "mason", "p": ["n"], "n": "skal + -rin", "c": "Stone, metal and craft"}, {"w": "khorrin", "g": "smith", "p": ["n"], "n": "khorr + -rin", "c": "Stone, metal and craft"}, {"w": "balrin", "g": "woodworker, carpenter", "p": ["n"], "n": "bal + -rin", "c": "Stone, metal and craft"}, {"w": "ark", "g": "work, labour; to work", "p": ["n", "v"], "n": "", "c": "Stone, metal and craft"}, {"w": "lyst", "g": "craft, skill, art", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "kev", "g": "tool", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "rapp", "g": "rope", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "kett", "g": "chain", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "nyl", "g": "key", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "thrad", "g": "to seal, to bind", "p": ["v"], "n": "from thra", "c": "Stone, metal and craft"}, {"w": "balth", "g": "beam, plank", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "khrev", "g": "saw", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "khul", "g": "wheel", "p": ["n"], "n": "", "c": "Stone, metal and craft"}, {"w": "bur", "g": "house, home, dwelling; to dwell", "p": ["n", "v"], "n": "Th. bur", "c": "Building and dwelling"}, {"w": "burgor", "g": "city", "p": ["n"], "n": "bur + gor", "c": "Building and dwelling"}, {"w": "burlys", "g": "village, town", "p": ["n"], "n": "bur + lys", "c": "Building and dwelling"}, {"w": "hull", "g": "hall", "p": ["n"], "n": "", "c": "Building and dwelling"}, {"w": "hernuth", "g": "kingdom, realm", "p": ["n"], "n": "hern + -uth", "c": "Building and dwelling"}, {"w": "barr", "g": "wall", "p": ["n"], "n": "", "c": "Building and dwelling"}, {"w": "gann", "g": "door; to open", "p": ["n", "v"], "n": "", "c": "Building and dwelling"}, {"w": "ganngor", "g": "gate", "p": ["n"], "n": "gann + gor", "c": "Building and dwelling"}, {"w": "nagann", "g": "to close, to shut", "p": ["v"], "n": "na + gann", "c": "Building and dwelling"}, {"w": "stabb", "g": "pillar", "p": ["n"], "n": "", "c": "Building and dwelling"}, {"w": "uthel", "g": "stair, stairs", "p": ["n"], "n": "", "c": "Building and dwelling"}, {"w": "kepp", "g": "roof", "p": ["n"], "n": "", "c": "Building and dwelling"}, {"w": "arkh", "g": "arch", "p": ["n"], "n": "", "c": "Building and dwelling"}, {"w": "hairn", "g": "tower", "p": ["n"], "n": "hai + rn", "c": "Building and dwelling"}, {"w": "thonskal", "g": "bridge", "p": ["n"], "n": "thon \"across\" + skal", "c": "Building and dwelling"}, {"w": "forsep", "g": "hearth, fireside", "p": ["n"], "n": "for \"fire\" + sep \"sit\"", "c": "Building and dwelling"}, {"w": "dath", "g": "road, path, way", "p": ["n"], "n": "Th. dath", "c": "Building and dwelling"}, {"w": "dulmdath", "g": "secret path", "p": ["n"], "n": "dulm + dath", "c": "Building and dwelling"}, {"w": "dathpell", "g": "map", "p": ["n"], "n": "dath + pell", "c": "Building and dwelling"}, {"w": "marr", "g": "land", "p": ["n"], "n": "", "c": "Building and dwelling"}, {"w": "theth", "g": "ground, earth, soil, floor", "p": ["n"], "n": "Th. theth", "c": "Building and dwelling"}, {"w": "dan", "g": "person", "p": ["n"], "n": "Th. dan", "c": "Kin and folk"}, {"w": "arro", "g": "man, male", "p": ["n"], "n": "Th. aro", "c": "Kin and folk"}, {"w": "ena", "g": "woman, female", "p": ["n"], "n": "Th. ena", "c": "Kin and folk"}, {"w": "lio", "g": "child", "p": ["n"], "n": "Th. lio", "c": "Kin and folk"}, {"w": "dorr", "g": "son", "p": ["n"], "n": "", "c": "Kin and folk"}, {"w": "venn", "g": "daughter", "p": ["n"], "n": "", "c": "Kin and folk"}, {"w": "ama", "g": "mother", "p": ["n"], "n": "Th. ama", "c": "Kin and folk"}, {"w": "abu", "g": "father", "p": ["n"], "n": "Th. abu", "c": "Kin and folk"}, {"w": "amm", "g": "sibling", "p": ["n"], "n": "", "c": "Kin and folk"}, {"w": "ammar", "g": "brother", "p": ["n"], "n": "amm + arro", "c": "Kin and folk"}, {"w": "ammen", "g": "sister", "p": ["n"], "n": "amm + ena", "c": "Kin and folk"}, {"w": "kham", "g": "mate, spouse, husband, wife; to marry", "p": ["n", "v"], "n": "", "c": "Kin and folk"}, {"w": "khamisi", "g": "bride, bridegroom", "p": ["n"], "n": "kham + isi \"new\"", "c": "Kin and folk"}, {"w": "kalm", "g": "clan, kin, family", "p": ["n"], "n": "", "c": "Kin and folk"}, {"w": "endodan", "g": "ancestor", "p": ["n"], "n": "endo + dan", "c": "Kin and folk"}, {"w": "endorin", "g": "elder", "p": ["n"], "n": "endo + -rin", "c": "Kin and folk"}, {"w": "lunrin", "g": "heir, descendant", "p": ["n"], "n": "lun + -rin", "c": "Kin and folk"}, {"w": "lun", "g": "line of descent, lineage", "p": ["n"], "n": "Th. lun \"tongue\": those who carry the word", "c": "Kin and folk"}, {"w": "sola", "g": "friend, companion", "p": ["n"], "n": "Th. sola", "c": "Kin and folk"}, {"w": "nasola", "g": "enemy", "p": ["n"], "n": "na + sola", "c": "Kin and folk"}, {"w": "nachen", "g": "stranger; unknown", "p": ["n", "adj"], "n": "na + chen", "c": "Kin and folk"}, {"w": "hern", "g": "lord, ruler, king; to rule", "p": ["n", "v"], "n": "Th. hern", "c": "Kin and folk"}, {"w": "golrin", "g": "captain, leader", "p": ["n"], "n": "gol \"head\" + -rin", "c": "Kin and folk"}, {"w": "hasrin", "g": "breather, life-giver", "p": ["n"], "n": "has + -rin", "c": "Kin and folk"}, {"w": "hasulo", "g": "to breathe life into", "p": ["v"], "n": "has + ulo", "c": "Kin and folk"}, {"w": "ham", "g": "spirit", "p": ["n"], "n": "", "c": "Kin and folk"}, {"w": "nauhas", "g": "ghost", "p": ["n"], "n": "nau + has", "c": "Kin and folk"}, {"w": "grakh", "g": "fight, battle; to fight", "p": ["n", "v"], "n": "Th. grak", "c": "War and guarding"}, {"w": "grakhgor", "g": "war", "p": ["n"], "n": "grakh + gor", "c": "War and guarding"}, {"w": "grakhrin", "g": "soldier", "p": ["n"], "n": "grakh + -rin", "c": "War and guarding"}, {"w": "skarrin", "g": "warrior", "p": ["n"], "n": "skar + -rin", "c": "War and guarding"}, {"w": "skeldrin", "g": "guard", "p": ["n"], "n": "skeld + -rin", "c": "War and guarding"}, {"w": "thulrin", "g": "warden, keeper, constable", "p": ["n"], "n": "Th. thulran", "c": "War and guarding"}, {"w": "skar", "g": "sword, blade", "p": ["n"], "n": "Th. skar", "c": "War and guarding"}, {"w": "skarlys", "g": "knife, dagger", "p": ["n"], "n": "skar + lys", "c": "War and guarding"}, {"w": "skeld", "g": "shield; to defend", "p": ["n", "v"], "n": "", "c": "War and guarding"}, {"w": "golskeld", "g": "helmet", "p": ["n"], "n": "gol + skeld", "c": "War and guarding"}, {"w": "hamr", "g": "armour", "p": ["n"], "n": "", "c": "War and guarding"}, {"w": "lanth", "g": "spear", "p": ["n"], "n": "", "c": "War and guarding"}, {"w": "khol", "g": "axe", "p": ["n"], "n": "", "c": "War and guarding"}, {"w": "iev", "g": "bow", "p": ["n"], "n": "", "c": "War and guarding"}, {"w": "fleth", "g": "arrow", "p": ["n"], "n": "", "c": "War and guarding"}, {"w": "thurr", "g": "victory; to win", "p": ["n", "v"], "n": "", "c": "War and guarding"}, {"w": "nathurr", "g": "defeat; to lose a fight", "p": ["n", "v"], "n": "na + thurr", "c": "War and guarding"}, {"w": "orn", "g": "honour; to honour", "p": ["n", "v"], "n": "", "c": "War and guarding"}, {"w": "naorn", "g": "shame", "p": ["n"], "n": "na + orn", "c": "War and guarding"}, {"w": "ilorn", "g": "glory", "p": ["n"], "n": "ilu + orn", "c": "War and guarding"}, {"w": "thalm", "g": "discipline", "p": ["n"], "n": "", "c": "War and guarding"}, {"w": "skath", "g": "shadow", "p": ["n"], "n": "", "c": "War and guarding"}, {"w": "naufo", "g": "silence; silent", "p": ["n", "adj"], "n": "nau + fo", "c": "War and guarding"}, {"w": "nokhur", "g": "the dark things below", "p": ["n"], "n": "nokh + -ur", "c": "War and guarding"}, {"w": "drub", "g": "to strike, to hit", "p": ["v"], "n": "", "c": "War and guarding"}, {"w": "grakhdi", "g": "to attack", "p": ["v"], "n": "grakh + di", "c": "War and guarding"}, {"w": "morrudom", "g": "to kill", "p": ["v"], "n": "morru + dom: make die", "c": "War and guarding"}, {"w": "skerr", "g": "to butcher, to cut", "p": ["v"], "n": "", "c": "War and guarding"}, {"w": "orm", "g": "heart", "p": ["n"], "n": "Th. orm", "c": "Body"}, {"w": "dumorm", "g": "liver", "p": ["n"], "n": "dum \"deep\" + orm", "c": "Body"}, {"w": "ylm", "g": "eye", "p": ["n"], "n": "Th. ilm", "c": "Body"}, {"w": "dagg", "g": "hand", "p": ["n"], "n": "Th. dag", "c": "Body"}, {"w": "gol", "g": "head; to lead", "p": ["n", "v"], "n": "Th. gol", "c": "Body"}, {"w": "mun", "g": "mouth", "p": ["n"], "n": "Th. mun", "c": "Body"}, {"w": "rwa", "g": "blood", "p": ["n"], "n": "Th. rua", "c": "Body"}, {"w": "bru", "g": "bone", "p": ["n"], "n": "Th. bru", "c": "Body"}, {"w": "has", "g": "breath; to breathe", "p": ["n", "v"], "n": "Th. has", "c": "Body"}, {"w": "iela", "g": "wing", "p": ["n"], "n": "Th. yela", "c": "Body"}, {"w": "brakh", "g": "arm", "p": ["n"], "n": "", "c": "Body"}, {"w": "stamm", "g": "leg", "p": ["n"], "n": "", "c": "Body"}, {"w": "trod", "g": "foot", "p": ["n"], "n": "", "c": "Body"}, {"w": "ansa", "g": "face", "p": ["n"], "n": "", "c": "Body"}, {"w": "hlenn", "g": "beard", "p": ["n"], "n": "", "c": "Body"}, {"w": "kemm", "g": "hair", "p": ["n"], "n": "", "c": "Body"}, {"w": "tand", "g": "tooth", "p": ["n"], "n": "", "c": "Body"}, {"w": "lusk", "g": "ear", "p": ["n"], "n": "", "c": "Body"}, {"w": "nas", "g": "nose", "p": ["n"], "n": "", "c": "Body"}, {"w": "rugg", "g": "back", "p": ["n"], "n": "", "c": "Body"}, {"w": "kist", "g": "chest", "p": ["n"], "n": "", "c": "Body"}, {"w": "khom", "g": "body", "p": ["n"], "n": "", "c": "Body"}, {"w": "ael", "g": "sky", "p": ["n"], "n": "Th. ael", "c": "Nature"}, {"w": "ilun", "g": "sun", "p": ["n"], "n": "Th. ilun", "c": "Nature"}, {"w": "nel", "g": "moon", "p": ["n"], "n": "Th. nel", "c": "Nature"}, {"w": "dirra", "g": "star", "p": ["n"], "n": "Th. dira", "c": "Nature"}, {"w": "ilu", "g": "light; bright, white; to shine", "p": ["n", "adj", "v"], "n": "Th. ilu", "c": "Nature"}, {"w": "nokh", "g": "darkness; dark, black", "p": ["n", "adj"], "n": "Th. nok", "c": "Nature"}, {"w": "ilo", "g": "day", "p": ["n"], "n": "Th. ilo", "c": "Nature"}, {"w": "noko", "g": "night", "p": ["n"], "n": "Th. noko", "c": "Nature"}, {"w": "uma", "g": "water", "p": ["n"], "n": "Th. uma", "c": "Nature"}, {"w": "ulma", "g": "sea", "p": ["n"], "n": "Th. ulma", "c": "Nature"}, {"w": "ren", "g": "river", "p": ["n"], "n": "Th. ren", "c": "Nature"}, {"w": "mer", "g": "lake", "p": ["n"], "n": "", "c": "Nature"}, {"w": "ulmaskal", "g": "island", "p": ["n"], "n": "ulma + skal", "c": "Nature"}, {"w": "dalm", "g": "valley", "p": ["n"], "n": "", "c": "Nature"}, {"w": "surru", "g": "wind", "p": ["n"], "n": "Th. suru", "c": "Nature"}, {"w": "surrugor", "g": "storm", "p": ["n"], "n": "surru + gor", "c": "Nature"}, {"w": "brum", "g": "thunder", "p": ["n"], "n": "", "c": "Nature"}, {"w": "blik", "g": "lightning", "p": ["n"], "n": "", "c": "Nature"}, {"w": "olmael", "g": "cloud", "p": ["n"], "n": "olm + ael: sky-mist", "c": "Nature"}, {"w": "olm", "g": "mist, fog", "p": ["n"], "n": "Th. olm", "c": "Nature"}, {"w": "drus", "g": "rain", "p": ["n"], "n": "", "c": "Nature"}, {"w": "fann", "g": "snow", "p": ["n"], "n": "", "c": "Nature"}, {"w": "gelskal", "g": "ice", "p": ["n"], "n": "gel + skal: cold stone", "c": "Nature"}, {"w": "for", "g": "fire; hot", "p": ["n", "adj"], "n": "Th. vor", "c": "Nature"}, {"w": "olmafor", "g": "smoke", "p": ["n"], "n": "Th. olmavor", "c": "Nature"}, {"w": "fornau", "g": "ash", "p": ["n"], "n": "Th. vornau", "c": "Nature"}, {"w": "bal", "g": "tree, wood", "p": ["n"], "n": "Th. bal", "c": "Nature"}, {"w": "hald", "g": "forest", "p": ["n"], "n": "Th. hald", "c": "Nature"}, {"w": "bela", "g": "leaf", "p": ["n"], "n": "Th. bela", "c": "Nature"}, {"w": "dru", "g": "root of a plant", "p": ["n"], "n": "Th. dru", "c": "Nature"}, {"w": "osi", "g": "seed", "p": ["n"], "n": "Th. osi", "c": "Nature"}, {"w": "bluth", "g": "flower", "p": ["n"], "n": "", "c": "Nature"}, {"w": "gerr", "g": "grass", "p": ["n"], "n": "", "c": "Nature"}, {"w": "akr", "g": "field", "p": ["n"], "n": "", "c": "Nature"}, {"w": "skuppa", "g": "mushroom", "p": ["n"], "n": "", "c": "Nature"}, {"w": "gar", "g": "beast, animal", "p": ["n"], "n": "Th. gar", "c": "Nature"}, {"w": "kra", "g": "raven", "p": ["n"], "n": "Th. kra", "c": "Nature"}, {"w": "ielrin", "g": "bird", "p": ["n"], "n": "Th. yelran", "c": "Nature"}, {"w": "fulg", "g": "wolf", "p": ["n"], "n": "Th. vulg", "c": "Nature"}, {"w": "nokhiel", "g": "bat", "p": ["n"], "n": "nokh + iel: night-flyer", "c": "Nature"}, {"w": "skuth", "g": "spider", "p": ["n"], "n": "", "c": "Nature"}, {"w": "skuthlun", "g": "web", "p": ["n"], "n": "skuth + lun \"line\"", "c": "Nature"}, {"w": "wurm", "g": "worm, wyrm", "p": ["n"], "n": "", "c": "Nature"}, {"w": "sith", "g": "snake", "p": ["n"], "n": "", "c": "Nature"}, {"w": "lakh", "g": "fish", "p": ["n"], "n": "", "c": "Nature"}, {"w": "ursk", "g": "bear", "p": ["n"], "n": "", "c": "Nature"}, {"w": "hesk", "g": "horse", "p": ["n"], "n": "", "c": "Nature"}, {"w": "brynngar", "g": "goat", "p": ["n"], "n": "brynn + gar: hill beast", "c": "Nature"}, {"w": "gurr", "g": "dog", "p": ["n"], "n": "", "c": "Nature"}, {"w": "namm", "g": "food", "p": ["n"], "n": "nam + m", "c": "Food and household"}, {"w": "nammgor", "g": "feast", "p": ["n"], "n": "namm + gor", "c": "Food and household"}, {"w": "melth", "g": "bread", "p": ["n"], "n": "", "c": "Food and household"}, {"w": "khar", "g": "meat", "p": ["n"], "n": "", "c": "Food and household"}, {"w": "brusk", "g": "ale, beer", "p": ["n"], "n": "", "c": "Food and household"}, {"w": "kopp", "g": "cup", "p": ["n"], "n": "", "c": "Food and household"}, {"w": "sild", "g": "bowl", "p": ["n"], "n": "", "c": "Food and household"}, {"w": "orru", "g": "time", "p": ["n"], "n": "Th. oru", "c": "Time"}, {"w": "orrlys", "g": "hour", "p": ["n"], "n": "orru + lys", "c": "Time"}, {"w": "nelorru", "g": "month", "p": ["n"], "n": "nel + orru", "c": "Time"}, {"w": "tidd", "g": "season", "p": ["n"], "n": "", "c": "Time"}, {"w": "ien", "g": "year", "p": ["n"], "n": "Th. yen", "c": "Time"}, {"w": "orrugor", "g": "age, era", "p": ["n"], "n": "orru + gor", "c": "Time"}, {"w": "ilana", "g": "morning", "p": ["n"], "n": "ilu + ana", "c": "Time"}, {"w": "ilul", "g": "evening", "p": ["n"], "n": "ilu + ul", "c": "Time"}, {"w": "iloka", "g": "yesterday", "p": ["adv"], "n": "ilo + ka", "c": "Time"}, {"w": "ilovi", "g": "tomorrow", "p": ["adv"], "n": "ilo + vi", "c": "Time"}, {"w": "eynilo", "g": "today", "p": ["adv"], "n": "eyn + ilo", "c": "Time"}, {"w": "kaorru", "g": "the past", "p": ["n"], "n": "ka + orru", "c": "Time"}, {"w": "viorru", "g": "the future", "p": ["n"], "n": "vi + orru", "c": "Time"}, {"w": "nu", "g": "now", "p": ["adv"], "n": "Th. nu", "c": "Time"}, {"w": "nuvi", "g": "soon", "p": ["adv"], "n": "nu + vi", "c": "Time"}, {"w": "ana", "g": "beginning; to begin", "p": ["n", "v"], "n": "Th. ana", "c": "Time"}, {"w": "ul", "g": "end; to end", "p": ["n", "v"], "n": "Th. ul", "c": "Time"}, {"w": "urrorru", "g": "always, forever", "p": ["adv"], "n": "Th. uroru", "c": "Time"}, {"w": "naorru", "g": "never", "p": ["adv"], "n": "na + orru", "c": "Time"}, {"w": "olorru", "g": "often", "p": ["adv"], "n": "olo + orru", "c": "Time"}, {"w": "osorru", "g": "then", "p": ["adv"], "n": "os + orru", "c": "Time"}, {"w": "lym", "g": "love; to love", "p": ["n", "v"], "n": "Th. lim", "c": "Feeling and spirit"}, {"w": "nalym", "g": "hate; to hate", "p": ["n", "v"], "n": "na + lym", "c": "Feeling and spirit"}, {"w": "skel", "g": "fear; to fear", "p": ["n", "v"], "n": "Th. skel", "c": "Feeling and spirit"}, {"w": "lethm", "g": "scorn; to scorn", "p": ["n", "v"], "n": "", "c": "Feeling and spirit"}, {"w": "mild", "g": "pity; to pity", "p": ["n", "v"], "n": "", "c": "Feeling and spirit"}, {"w": "khamorm", "g": "devotion", "p": ["n"], "n": "kham + orm: bonded heart", "c": "Feeling and spirit"}, {"w": "ilvel", "g": "hope; to hope", "p": ["n", "v"], "n": "ilu + vel", "c": "Feeling and spirit"}, {"w": "gleth", "g": "joy", "p": ["n"], "n": "", "c": "Feeling and spirit"}, {"w": "harm", "g": "sorrow", "p": ["n"], "n": "", "c": "Feeling and spirit"}, {"w": "vreth", "g": "anger", "p": ["n"], "n": "", "c": "Feeling and spirit"}, {"w": "girr", "g": "greed", "p": ["n"], "n": "", "c": "Feeling and spirit"}, {"w": "dathvel", "g": "wanderlust", "p": ["n"], "n": "dath + vel: road-longing", "c": "Feeling and spirit"}, {"w": "rotha", "g": "corruption, rot", "p": ["n"], "n": "", "c": "Feeling and spirit"}, {"w": "ulvel", "g": "purpose", "p": ["n"], "n": "ul + vel", "c": "Feeling and spirit"}, {"w": "gild", "g": "worth, value, payment; to pay", "p": ["n", "v"], "n": "", "c": "Feeling and spirit"}, {"w": "sel", "g": "truth; true, right", "p": ["n", "adj"], "n": "Th. sel", "c": "Feeling and spirit"}, {"w": "nasel", "g": "lie; false, wrong", "p": ["n", "adj"], "n": "Th. nasel", "c": "Feeling and spirit"}, {"w": "sama", "g": "peace", "p": ["n"], "n": "Th. sama", "c": "Feeling and spirit"}, {"w": "dur", "g": "power, strength; mighty, strong", "p": ["n", "adj"], "n": "Th. dur", "c": "Feeling and spirit"}, {"w": "helm", "g": "sacred, holy", "p": ["adj"], "n": "", "c": "Feeling and spirit"}, {"w": "dorn", "g": "courage; brave", "p": ["n", "adj"], "n": "", "c": "Feeling and spirit"}, {"w": "es", "g": "to be, to exist", "p": ["v"], "n": "Th. es", "c": "Verbs"}, {"w": "esga", "g": "to become", "p": ["v"], "n": "es + ga", "c": "Verbs"}, {"w": "esdi", "g": "to happen", "p": ["v"], "n": "es + di", "c": "Verbs"}, {"w": "mai", "g": "to have, to own", "p": ["v"], "n": "Th. mai", "c": "Verbs"}, {"w": "ga", "g": "to go", "p": ["v"], "n": "Th. ga", "c": "Verbs"}, {"w": "di", "g": "to come", "p": ["v"], "n": "Th. di", "c": "Verbs"}, {"w": "rodi", "g": "to return", "p": ["v"], "n": "Th. rodi", "c": "Verbs"}, {"w": "bordi", "g": "to bring", "p": ["v"], "n": "bor + di", "c": "Verbs"}, {"w": "bor", "g": "to carry", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "dove", "g": "to send", "p": ["v"], "n": "Th. dove", "c": "Verbs"}, {"w": "dathga", "g": "to travel, to journey", "p": ["v"], "n": "dath + ga", "c": "Verbs"}, {"w": "drif", "g": "to wander", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "hairga", "g": "to climb", "p": ["v"], "n": "hai + ga", "c": "Verbs"}, {"w": "pall", "g": "to fall", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "doll", "g": "to dig, to mine", "p": ["v"], "n": "from dolm", "c": "Verbs"}, {"w": "hoth", "g": "to ask; question", "p": ["v", "n"], "n": "from ho", "c": "Verbs"}, {"w": "rofo", "g": "to answer; answer", "p": ["v", "n"], "n": "ro + fo", "c": "Verbs"}, {"w": "khal", "g": "to call", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "obe", "g": "to give; gift", "p": ["v", "n"], "n": "Th. obe", "c": "Verbs"}, {"w": "chel", "g": "to take", "p": ["v"], "n": "Th. kel", "c": "Verbs"}, {"w": "thul", "g": "to keep, to hold, to guard, to protect", "p": ["v"], "n": "Th. thul", "c": "Verbs"}, {"w": "lekh", "g": "to find", "p": ["v"], "n": "Th. lek", "c": "Verbs"}, {"w": "nalekh", "g": "to lose", "p": ["v"], "n": "na + lekh", "c": "Verbs"}, {"w": "gesk", "g": "to seek, to search, to test, to study", "p": ["v"], "n": "Th. gesk", "c": "Verbs"}, {"w": "mynn", "g": "thought, idea; to think", "p": ["n", "v"], "n": "", "c": "Verbs"}, {"w": "selm", "g": "to believe", "p": ["v"], "n": "sel + m", "c": "Verbs"}, {"w": "syn", "g": "to see, to look", "p": ["v"], "n": "Th. sin", "c": "Verbs"}, {"w": "synthul", "g": "to watch", "p": ["v"], "n": "syn + thul", "c": "Verbs"}, {"w": "lus", "g": "to hear, to listen", "p": ["v"], "n": "Th. lus", "c": "Verbs"}, {"w": "thim", "g": "to feel", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "rakh", "g": "to touch", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "vel", "g": "to want, to wish", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "thar", "g": "to need, must; duty", "p": ["v", "n"], "n": "", "c": "Verbs"}, {"w": "kunn", "g": "can, to be able", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "ulo", "g": "life; to live; alive", "p": ["n", "v", "adj"], "n": "Th. ulo", "c": "Verbs"}, {"w": "morru", "g": "death; to die", "p": ["n", "v"], "n": "Th. moru", "c": "Verbs"}, {"w": "skor", "g": "to break", "p": ["v"], "n": "Th. skor", "c": "Verbs"}, {"w": "forru", "g": "to burn", "p": ["v"], "n": "Th. voru", "c": "Verbs"}, {"w": "olu", "g": "to grow", "p": ["v"], "n": "Th. olu", "c": "Verbs"}, {"w": "nam", "g": "to eat", "p": ["v"], "n": "Th. nam", "c": "Verbs"}, {"w": "silu", "g": "to drink", "p": ["v"], "n": "Th. silu", "c": "Verbs"}, {"w": "thun", "g": "to walk", "p": ["v"], "n": "Th. thun", "c": "Verbs"}, {"w": "fylg", "g": "to follow", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "ras", "g": "to run", "p": ["v"], "n": "Th. ras", "c": "Verbs"}, {"w": "iel", "g": "to fly", "p": ["v"], "n": "Th. yel", "c": "Verbs"}, {"w": "sep", "g": "to sit", "p": ["v"], "n": "Th. seb", "c": "Verbs"}, {"w": "thal", "g": "to stand", "p": ["v"], "n": "Th. thal", "c": "Verbs"}, {"w": "nem", "g": "to sleep", "p": ["v"], "n": "Th. nem", "c": "Verbs"}, {"w": "erru", "g": "to wake", "p": ["v"], "n": "Th. eru", "c": "Verbs"}, {"w": "dav", "g": "to wait", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "sokh", "g": "to help; help", "p": ["v", "n"], "n": "", "c": "Verbs"}, {"w": "larru", "g": "song; to sing", "p": ["n", "v"], "n": "Th. laru", "c": "Verbs"}, {"w": "umla", "g": "to weep", "p": ["v"], "n": "from uma", "c": "Verbs"}, {"w": "gell", "g": "to laugh", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "tham", "g": "to serve", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "kuth", "g": "to choose, to decide", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "dumga", "g": "to sink", "p": ["v"], "n": "dum + ga", "c": "Verbs"}, {"w": "dumdom", "g": "to sink (something), to drown", "p": ["v"], "n": "dum + dom", "c": "Verbs"}, {"w": "rekk", "g": "to count", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "mett", "g": "to measure", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "hend", "g": "to send word home", "p": ["v"], "n": "", "c": "Verbs"}, {"w": "chenobe", "g": "to share knowledge", "p": ["v"], "n": "chen + obe", "c": "Verbs"}, {"w": "gor", "g": "great, big, large", "p": ["adj"], "n": "Th. gor", "c": "Qualities"}, {"w": "lys", "g": "small, little, short", "p": ["adj"], "n": "Th. lis", "c": "Qualities"}, {"w": "ela", "g": "good", "p": ["adj"], "n": "Th. ela", "c": "Qualities"}, {"w": "drogg", "g": "evil, bad", "p": ["adj"], "n": "Th. drog", "c": "Qualities"}, {"w": "endo", "g": "old, ancient", "p": ["adj"], "n": "Th. endo", "c": "Qualities"}, {"w": "isi", "g": "new, young", "p": ["adj"], "n": "Th. isi", "c": "Qualities"}, {"w": "hai", "g": "high, tall; to rise", "p": ["adj", "v"], "n": "Th. hai", "c": "Qualities"}, {"w": "dum", "g": "deep", "p": ["adj"], "n": "Th. dum", "c": "Qualities"}, {"w": "ane", "g": "first", "p": ["adj"], "n": "Th. ane", "c": "Qualities"}, {"w": "ule", "g": "last", "p": ["adj"], "n": "ul + e", "c": "Qualities"}, {"w": "dyr", "g": "long", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "breth", "g": "wide", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "threng", "g": "narrow", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "thung", "g": "heavy", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "lett", "g": "light (in weight)", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "dros", "g": "hard", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "lin", "g": "soft, gentle", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "nadur", "g": "weak", "p": ["adj"], "n": "na + dur", "c": "Qualities"}, {"w": "rask", "g": "fast, quick", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "lent", "g": "slow", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "gel", "g": "cold", "p": ["adj"], "n": "Th. gel", "c": "Qualities"}, {"w": "forlys", "g": "warm", "p": ["adj"], "n": "for + lys", "c": "Qualities"}, {"w": "fukt", "g": "wet", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "sekk", "g": "dry", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "fyll", "g": "full", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "nau", "g": "nothing, none; empty", "p": ["n", "adj"], "n": "Th. nau", "c": "Qualities"}, {"w": "rikh", "g": "rich", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "naurikh", "g": "poor", "p": ["adj"], "n": "nau + rikh", "c": "Qualities"}, {"w": "ilwen", "g": "beautiful, fair", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "nailwen", "g": "ugly", "p": ["adj"], "n": "na + ilwen", "c": "Qualities"}, {"w": "orngor", "g": "proud", "p": ["adj"], "n": "orn + gor", "c": "Qualities"}, {"w": "lysorm", "g": "humble", "p": ["adj"], "n": "lys + orm", "c": "Qualities"}, {"w": "ormela", "g": "kind", "p": ["adj"], "n": "orm + ela", "c": "Qualities"}, {"w": "droggorm", "g": "cruel", "p": ["adj"], "n": "drogg + orm", "c": "Qualities"}, {"w": "dulb", "g": "foolish; fool", "p": ["adj", "n"], "n": "", "c": "Qualities"}, {"w": "skarp", "g": "clever, sharp", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "naskore", "g": "unbreakable", "p": ["adj"], "n": "na + skor + e", "c": "Qualities"}, {"w": "nathra", "g": "free, unbound", "p": ["adj"], "n": "na + thra", "c": "Qualities"}, {"w": "forre", "g": "red", "p": ["adj"], "n": "Th. vore", "c": "Qualities"}, {"w": "bale", "g": "green", "p": ["adj"], "n": "bal + e", "c": "Qualities"}, {"w": "aele", "g": "blue", "p": ["adj"], "n": "ael + e", "c": "Qualities"}, {"w": "skale", "g": "grey", "p": ["adj"], "n": "skal + e", "c": "Qualities"}, {"w": "solme", "g": "golden", "p": ["adj"], "n": "solm + e", "c": "Qualities"}, {"w": "sam", "g": "same; like, as", "p": ["adj", "prep"], "n": "", "c": "Qualities"}, {"w": "osan", "g": "other", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "mid", "g": "half, middle", "p": ["n", "adj"], "n": "", "c": "Qualities"}, {"w": "ferr", "g": "far", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "nar", "g": "near", "p": ["adj"], "n": "", "c": "Qualities"}, {"w": "anan", "g": "alone", "p": ["adj"], "n": "an + an", "c": "Qualities"}, {"w": "dalur", "g": "together", "p": ["adv"], "n": "dal + ur", "c": "Qualities"}, {"w": "anel", "g": "only", "p": ["adv"], "n": "", "c": "Qualities"}, {"w": "olo", "g": "many, much", "p": ["adj"], "n": "Th. olo", "c": "Qualities"}, {"w": "se", "g": "few", "p": ["adj"], "n": "Th. se", "c": "Qualities"}, {"w": "ur", "g": "all, every, each, whole", "p": ["adj"], "n": "Th. ur", "c": "Qualities"}, {"w": "ma", "g": "I, me", "p": ["pron"], "n": "Th. ma", "c": "Pronouns and question words"}, {"w": "mar", "g": "we, us", "p": ["pron"], "n": "Th. mar", "c": "Pronouns and question words"}, {"w": "thi", "g": "you", "p": ["pron"], "n": "Th. thi", "c": "Pronouns and question words"}, {"w": "thyr", "g": "you (plural)", "p": ["pron"], "n": "Th. thir", "c": "Pronouns and question words"}, {"w": "ha", "g": "he, she, it, him, her", "p": ["pron"], "n": "Th. ha", "c": "Pronouns and question words"}, {"w": "har", "g": "they, them", "p": ["pron"], "n": "Th. har", "c": "Pronouns and question words"}, {"w": "sem", "g": "self", "p": ["pron"], "n": "", "c": "Pronouns and question words"}, {"w": "eyn", "g": "this", "p": ["det"], "n": "Th. ein", "c": "Pronouns and question words"}, {"w": "eynur", "g": "these", "p": ["det"], "n": "eyn + ur", "c": "Pronouns and question words"}, {"w": "os", "g": "that; which, who (joining a clause)", "p": ["det"], "n": "Th. os", "c": "Pronouns and question words"}, {"w": "osur", "g": "those", "p": ["det"], "n": "os + ur", "c": "Pronouns and question words"}, {"w": "he", "g": "what", "p": ["pron"], "n": "Th. he", "c": "Pronouns and question words"}, {"w": "hom", "g": "who", "p": ["pron"], "n": "Th. hom", "c": "Pronouns and question words"}, {"w": "hal", "g": "where", "p": ["adv"], "n": "Th. hal", "c": "Pronouns and question words"}, {"w": "hen", "g": "when", "p": ["adv"], "n": "Th. hen", "c": "Pronouns and question words"}, {"w": "hefa", "g": "why", "p": ["adv"], "n": "he + fa: what-for", "c": "Pronouns and question words"}, {"w": "heth", "g": "how", "p": ["adv"], "n": "", "c": "Pronouns and question words"}, {"w": "hes", "g": "which", "p": ["det"], "n": "", "c": "Pronouns and question words"}, {"w": "eynal", "g": "here", "p": ["adv"], "n": "eyn + hal", "c": "Pronouns and question words"}, {"w": "osal", "g": "there", "p": ["adv"], "n": "os + hal", "c": "Pronouns and question words"}, {"w": "urhe", "g": "everything", "p": ["pron"], "n": "ur + he", "c": "Pronouns and question words"}, {"w": "urhom", "g": "everyone", "p": ["pron"], "n": "ur + hom", "c": "Pronouns and question words"}, {"w": "urhal", "g": "everywhere", "p": ["adv"], "n": "ur + hal", "c": "Pronouns and question words"}, {"w": "ath", "g": "some, any", "p": ["det"], "n": "", "c": "Pronouns and question words"}, {"w": "athom", "g": "someone", "p": ["pron"], "n": "ath + hom", "c": "Pronouns and question words"}, {"w": "nauhom", "g": "no one", "p": ["pron"], "n": "nau + hom", "c": "Pronouns and question words"}, {"w": "nauhal", "g": "nowhere", "p": ["adv"], "n": "nau + hal", "c": "Pronouns and question words"}, {"w": "an", "g": "one; a, an", "p": ["num"], "n": "Th. an", "c": "Numbers"}, {"w": "bes", "g": "two", "p": ["num"], "n": "Th. bes", "c": "Numbers"}, {"w": "dun", "g": "three", "p": ["num"], "n": "Th. dun", "c": "Numbers"}, {"w": "hudd", "g": "four", "p": ["num"], "n": "Th. hud", "c": "Numbers"}, {"w": "hon", "g": "five", "p": ["num"], "n": "Th. hon", "c": "Numbers"}, {"w": "sykh", "g": "six", "p": ["num"], "n": "Th. sik", "c": "Numbers"}, {"w": "kru", "g": "seven", "p": ["num"], "n": "Th. kru", "c": "Numbers"}, {"w": "gom", "g": "eight", "p": ["num"], "n": "Th. gom", "c": "Numbers"}, {"w": "nai", "g": "nine", "p": ["num"], "n": "Th. nai", "c": "Numbers"}, {"w": "dekh", "g": "ten", "p": ["num"], "n": "Th. dek", "c": "Numbers"}, {"w": "tava", "g": "hundred", "p": ["num"], "n": "", "c": "Numbers"}, {"w": "mahl", "g": "thousand", "p": ["num"], "n": "", "c": "Numbers"}, {"w": "o", "g": "the", "p": ["det"], "n": "worn down from os \"that\"", "c": "Small words"}, {"w": "e", "g": "of", "p": ["prep"], "n": "from the Th. ending -e", "c": "Small words"}, {"w": "sa", "g": "and", "p": ["conj"], "n": "Th. sa", "c": "Small words"}, {"w": "ve", "g": "or", "p": ["conj"], "n": "Th. ve", "c": "Small words"}, {"w": "bun", "g": "but", "p": ["conj"], "n": "", "c": "Small words"}, {"w": "ef", "g": "if", "p": ["conj"], "n": "", "c": "Small words"}, {"w": "faos", "g": "because", "p": ["conj"], "n": "fa + os: for that", "c": "Small words"}, {"w": "thokh", "g": "although", "p": ["conj"], "n": "", "c": "Small words"}, {"w": "i", "g": "in, at, within", "p": ["prep"], "n": "Th. i", "c": "Small words"}, {"w": "ro", "g": "from, out of, than, since", "p": ["prep"], "n": "Th. ro", "c": "Small words"}, {"w": "che", "g": "to, toward, into", "p": ["prep"], "n": "Th. ke", "c": "Small words"}, {"w": "dal", "g": "with, beside, by", "p": ["prep"], "n": "Th. dal", "c": "Small words"}, {"w": "su", "g": "on, upon, over, above", "p": ["prep"], "n": "Th. su", "c": "Small words"}, {"w": "bel", "g": "under, beneath, below", "p": ["prep"], "n": "Th. bel", "c": "Small words"}, {"w": "thon", "g": "through, across", "p": ["prep"], "n": "Th. thon", "c": "Small words"}, {"w": "fa", "g": "for", "p": ["prep"], "n": "", "c": "Small words"}, {"w": "ab", "g": "about, concerning", "p": ["prep"], "n": "", "c": "Small words"}, {"w": "hun", "g": "among", "p": ["prep"], "n": "", "c": "Small words"}, {"w": "ar", "g": "against", "p": ["prep"], "n": "", "c": "Small words"}, {"w": "nadal", "g": "without", "p": ["prep"], "n": "na + dal", "c": "Small words"}, {"w": "umb", "g": "around", "p": ["prep"], "n": "", "c": "Small words"}, {"w": "bak", "g": "behind", "p": ["prep"], "n": "", "c": "Small words"}, {"w": "ulthon", "g": "beyond", "p": ["prep"], "n": "ul + thon", "c": "Small words"}, {"w": "ulche", "g": "until", "p": ["prep"], "n": "ul + che", "c": "Small words"}, {"w": "ka", "g": "before", "p": ["prep"], "n": "Th. ka", "c": "Small words"}, {"w": "vi", "g": "after", "p": ["prep"], "n": "Th. vi", "c": "Small words"}, {"w": "na", "g": "not, no", "p": ["part"], "n": "Th. na", "c": "Small words"}, {"w": "ia", "g": "yes", "p": ["part"], "n": "Th. ya", "c": "Small words"}, {"w": "ho", "g": "(question marker)", "p": ["part"], "n": "Th. ho", "c": "Small words"}, {"w": "thra", "g": "(the Binding: seals what follows)", "p": ["part"], "n": "Th. thra", "c": "Small words"}, {"w": "lat", "g": "to let, to allow", "p": ["v"], "n": "", "c": "More words"}, {"w": "brukh", "g": "to use", "p": ["v"], "n": "", "c": "More words"}, {"w": "dalga", "g": "to join", "p": ["v"], "n": "dal + ga", "c": "More words"}, {"w": "mott", "g": "to meet", "p": ["v"], "n": "", "c": "More words"}, {"w": "roga", "g": "to leave, to depart", "p": ["v"], "n": "ro + ga", "c": "More words"}, {"w": "chedi", "g": "to arrive", "p": ["v"], "n": "che + di", "c": "More words"}, {"w": "iga", "g": "to enter", "p": ["v"], "n": "i + ga", "c": "More words"}, {"w": "dvel", "g": "to stay, to remain", "p": ["v"], "n": "", "c": "More words"}, {"w": "skift", "g": "change; to change", "p": ["n", "v"], "n": "", "c": "More words"}, {"w": "snu", "g": "to turn", "p": ["v"], "n": "", "c": "More words"}, {"w": "drag", "g": "to pull", "p": ["v"], "n": "", "c": "More words"}, {"w": "skuf", "g": "to push", "p": ["v"], "n": "", "c": "More words"}, {"w": "kast", "g": "to throw", "p": ["v"], "n": "", "c": "More words"}, {"w": "fang", "g": "to catch", "p": ["v"], "n": "", "c": "More words"}, {"w": "bith", "g": "to pray", "p": ["v"], "n": "", "c": "More words"}, {"w": "helmdom", "g": "to bless", "p": ["v"], "n": "helm + dom", "c": "More words"}, {"w": "droggfo", "g": "curse; to curse", "p": ["n", "v"], "n": "drogg + fo", "c": "More words"}, {"w": "thrafo", "g": "to swear, to promise", "p": ["v"], "n": "thra + fo", "c": "More words"}, {"w": "naselfo", "g": "to lie, to deceive", "p": ["v"], "n": "nasel + fo", "c": "More words"}, {"w": "nemthe", "g": "dream; to dream", "p": ["n", "v"], "n": "nem + the: sleep-tale", "c": "More words"}, {"w": "leik", "g": "game; to play", "p": ["n", "v"], "n": "", "c": "More words"}, {"w": "dulmchel", "g": "to steal", "p": ["v"], "n": "dulm + chel", "c": "More words"}, {"w": "gargesk", "g": "to hunt", "p": ["v"], "n": "gar + gesk", "c": "More words"}, {"w": "umga", "g": "to swim", "p": ["v"], "n": "uma + ga", "c": "More words"}, {"w": "hael", "g": "to heal", "p": ["v"], "n": "", "c": "More words"}, {"w": "sar", "g": "wound; to wound", "p": ["n", "v"], "n": "", "c": "More words"}, {"w": "thol", "g": "to suffer, to endure", "p": ["v"], "n": "", "c": "More words"}, {"w": "vil", "g": "rest; to rest", "p": ["n", "v"], "n": "", "c": "More words"}, {"w": "merk", "g": "mark, sign, omen; to mark", "p": ["n", "v"], "n": "", "c": "More words"}, {"w": "hondark", "g": "to forge, to smith", "p": ["v"], "n": "hondur + ark", "c": "More words"}, {"w": "lusthul", "g": "to obey", "p": ["v"], "n": "lus + thul: hear and keep", "c": "More words"}, {"w": "selmett", "g": "to judge", "p": ["v"], "n": "sel + mett: measure the truth", "c": "More words"}, {"w": "brest", "g": "to fail", "p": ["v"], "n": "", "c": "More words"}, {"w": "berg", "g": "to save, to rescue", "p": ["v"], "n": "", "c": "More words"}, {"w": "flyt", "g": "to flee, to escape", "p": ["v"], "n": "", "c": "More words"}, {"w": "syndom", "g": "to show", "p": ["v"], "n": "syn + dom: make see", "c": "More words"}, {"w": "chendom", "g": "to explain", "p": ["v"], "n": "chen + dom: make known", "c": "More words"}, {"w": "belthal", "g": "to understand", "p": ["v"], "n": "bel + thal: under-stand", "c": "More words"}, {"w": "stann", "g": "to stop", "p": ["v"], "n": "", "c": "More words"}, {"w": "sett", "g": "to put, to place, to set", "p": ["v"], "n": "", "c": "More words"}, {"w": "liga", "g": "to lie down", "p": ["v"], "n": "", "c": "More words"}, {"w": "osidom", "g": "to plant", "p": ["v"], "n": "osi + dom", "c": "More words"}, {"w": "olun", "g": "plant", "p": ["n"], "n": "from olu \"grow\"", "c": "More words"}, {"w": "eth", "g": "thing", "p": ["n"], "n": "", "c": "More words"}, {"w": "uth", "g": "place", "p": ["n"], "n": "the suffix -uth standing alone", "c": "More words"}, {"w": "rett", "g": "law", "p": ["n"], "n": "", "c": "More words"}, {"w": "hernen", "g": "queen", "p": ["n"], "n": "hern + ena", "c": "More words"}, {"w": "thamrin", "g": "servant", "p": ["n"], "n": "tham + -rin", "c": "More words"}, {"w": "thradrin", "g": "slave", "p": ["n"], "n": "thrad + -rin: bound one", "c": "More words"}, {"w": "lystrin", "g": "master of a craft", "p": ["n"], "n": "lyst + -rin", "c": "More words"}, {"w": "dirin", "g": "guest", "p": ["n"], "n": "di + -rin", "c": "More words"}, {"w": "burrin", "g": "host", "p": ["n"], "n": "bur + -rin", "c": "More words"}, {"w": "gildur", "g": "treasure", "p": ["n"], "n": "plural of gild", "c": "More words"}, {"w": "mynt", "g": "coin, money", "p": ["n"], "n": "", "c": "More words"}, {"w": "tal", "g": "number", "p": ["n"], "n": "", "c": "More words"}, {"w": "ylmgann", "g": "window", "p": ["n"], "n": "ylm + gann: eye-door", "c": "More words"}, {"w": "nemuth", "g": "bed", "p": ["n"], "n": "nem + -uth", "c": "More words"}, {"w": "bord", "g": "table", "p": ["n"], "n": "", "c": "More words"}, {"w": "seputh", "g": "chair, seat", "p": ["n"], "n": "sep + -uth", "c": "More words"}, {"w": "ilukopp", "g": "lamp", "p": ["n"], "n": "ilu + kopp", "c": "More words"}, {"w": "forpinn", "g": "candle", "p": ["n"], "n": "for + pinn", "c": "More words"}, {"w": "forbal", "g": "torch", "p": ["n"], "n": "for + bal", "c": "More words"}, {"w": "forlun", "g": "flame", "p": ["n"], "n": "for + lun: fire-tongue", "c": "More words"}, {"w": "veth", "g": "cloth", "p": ["n"], "n": "", "c": "More words"}, {"w": "kappa", "g": "cloak", "p": ["n"], "n": "", "c": "More words"}, {"w": "trodpell", "g": "boot", "p": ["n"], "n": "trod + pell", "c": "More words"}, {"w": "khulys", "g": "ring", "p": ["n"], "n": "khul + lys: little wheel", "c": "More words"}, {"w": "golkhul", "g": "crown", "p": ["n"], "n": "gol + khul: head-wheel", "c": "More words"}, {"w": "sott", "g": "sickness", "p": ["n"], "n": "", "c": "More words"}, {"w": "drogguma", "g": "poison", "p": ["n"], "n": "drogg + uma", "c": "More words"}, {"w": "litt", "g": "colour", "p": ["n"], "n": "", "c": "More words"}, {"w": "lusa", "g": "sound", "p": ["n"], "n": "from lus", "c": "More words"}, {"w": "fofo", "g": "echo", "p": ["n"], "n": "doubling of fo", "c": "More words"}, {"w": "sakh", "g": "cause, reason", "p": ["n"], "n": "", "c": "More words"}, {"w": "kruilo", "g": "week", "p": ["n"], "n": "kru + ilo: seven days", "c": "More words"}, {"w": "skimm", "g": "moment", "p": ["n"], "n": "", "c": "More words"}, {"w": "ulg", "g": "very", "p": ["adv"], "n": "", "c": "More words"}, {"w": "eks", "g": "also", "p": ["adv"], "n": "", "c": "More words"}, {"w": "eft", "g": "again", "p": ["adv"], "n": "", "c": "More words"}, {"w": "enn", "g": "still, yet", "p": ["adv"], "n": "", "c": "More words"}, {"w": "kanu", "g": "already", "p": ["adv"], "n": "ka + nu", "c": "More words"}, {"w": "nari", "g": "almost", "p": ["adv"], "n": "from nar", "c": "More words"}, {"w": "efsel", "g": "perhaps", "p": ["adv"], "n": "ef + sel: if true", "c": "More words"}, {"w": "olra", "g": "more", "p": ["adj"], "n": "olo + -ra", "c": "More words"}, {"w": "olul", "g": "most", "p": ["adj"], "n": "olo + -ul", "c": "More words"}, {"w": "sera", "g": "less", "p": ["adj"], "n": "se + -ra", "c": "More words"}, {"w": "seul", "g": "least", "p": ["adj"], "n": "se + -ul", "c": "More words"}, {"w": "besur", "g": "both", "p": ["det"], "n": "bes + ur", "c": "More words"}, {"w": "athe", "g": "something, anything", "p": ["pron"], "n": "ath + he", "c": "More words"}, {"w": "thos", "g": "so, therefore, thus", "p": ["conj"], "n": "", "c": "More words"}, {"w": "efna", "g": "unless", "p": ["conj"], "n": "ef + na", "c": "More words"}, {"w": "haial", "g": "up, above", "p": ["adv"], "n": "hai + hal", "c": "More words"}, {"w": "dumal", "g": "down, below", "p": ["adv"], "n": "dum + hal", "c": "More words"}, {"w": "mell", "g": "between", "p": ["prep"], "n": "", "c": "More words"}, {"w": "skalorm", "g": "stone liver, the stone-hard organs of the Avaggdu", "p": ["n"], "n": "skal + orm", "c": "More words"}, {"w": "elailo", "g": "hello, greetings", "p": ["part"], "n": "ela + ilo: good day", "c": "More words"}, {"w": "dathela", "g": "farewell, goodbye", "p": ["part"], "n": "dath + ela: good road", "c": "More words"}, {"w": "ornthi", "g": "thank you, thanks", "p": ["part"], "n": "orn + thi: honour to you", "c": "More words"}, {"w": "nokhgar", "g": "monster", "p": ["n"], "n": "nokh + gar", "c": "More words"}, {"w": "chenfo", "g": "spell, charm", "p": ["n"], "n": "chen + fo", "c": "More words"}, {"w": "fylkh", "g": "army", "p": ["n"], "n": "", "c": "More words"}, {"w": "morruth", "g": "grave, tomb", "p": ["n"], "n": "morru + -uth", "c": "More words"}, {"w": "hasana", "g": "birth; to be born", "p": ["n", "v"], "n": "has + ana: first breath", "c": "More words"}, {"w": "dalmott", "g": "council", "p": ["n"], "n": "dal + mott", "c": "More words"}, {"w": "lystkalm", "g": "guild", "p": ["n"], "n": "lyst + kalm", "c": "More words"}, {"w": "dulmsyn", "g": "spy", "p": ["n"], "n": "dulm + syn", "c": "More words"}, {"w": "hendrin", "g": "messenger", "p": ["n"], "n": "hend + -rin", "c": "More words"}, {"w": "endabu", "g": "grandfather", "p": ["n"], "n": "endo + abu", "c": "More words"}, {"w": "endama", "g": "grandmother", "p": ["n"], "n": "endo + ama", "c": "More words"}, {"w": "ilanuth", "g": "east", "p": ["n"], "n": "ilana + -uth: the morning place", "c": "More words"}, {"w": "iluluth", "g": "west", "p": ["n"], "n": "ilul + -uth: the evening place", "c": "More words"}, {"w": "geluth", "g": "north", "p": ["n"], "n": "gel + -uth: the cold place", "c": "More words"}, {"w": "foruth", "g": "south", "p": ["n"], "n": "for + -uth: the fire place", "c": "More words"}], "idx": {"avaggdu": [["Avaggdu", "n", 0]], "dwarf": [["Avaggdu", "n", 0]], "folk": [["du", "n", 0]], "race": [["du", "n", 0]], "people": [["du", "n", 0]], "brynndu": [["Brynndu", "n", 0]], "hill folk": [["Brynndu", "n", 0]], "eorman": [["Haidu", "n", 0]], "eormen": [["Haidu", "n", 0]], "human": [["Haidu", "n", 0]], "eormen (formal": [["Geldu", "n", 1]], "in the tormegedlun)": [["Geldu", "n", 0]], "gothgaard": [["Skarthul", "name", 0]], "gothgaardian blade": [["skarlun", "n", 0]], "line-sword": [["skarlun", "n", 0]], "mountain pass": [["thondath", "n", 0]], "pass": [["thondath", "n", 0]], "glacier": [["gelskalgor", "n", 0]], "corvus": [["Kradu", "n", 0]], "story-folk": [["Thedu", "n", 0]], "ged": [["Ged", "name", 0]], "tale of ged": [["Theged", "name", 1]], "ged's line": [["Gedlun", "n", 0]], "all the avaggdu as his descendants": [["Gedlun", "n", 0]], "tormegedlun": [["Tormegedlun", "name", 0]], "book of ged's line": [["Tormegedlun", "name", 0]], "fotheged": [["Fotheged", "name", 0]], "scholarly tongue": [["Fotheged", "name", 0]], "thelun": [["Thelun", "name", 0]], "teller's tongue": [["Thelun", "name", 0]], "urthe": [["Urthe", "name", 0]], "lore": [["Urchen", "n", 0]], "magic": [["Urchen", "n", 0]], "lore-wielder": [["Urchenrin", "n", 0]], "teller": [["Therrin", "n", 0]], "constable of ravens": [["Thulrin Krar", "name", 0]], "skyald": [["Skyald", "name", 0]], "uthrekrech": [["Uthrekrech", "name", 0]], "underhall of the roots": [["Uthrekrech", "name", 0]], "roots of the world": [["Krechur e Urthe", "name", 0]], "hall of scribes": [["Hulltormur", "name", 0]], "rivenrook": [["Krabur", "name", 0]], "black diamond": [["Khaelnokh", "name", 0]], "birthplace of ged": [["Khaelnokh", "name", 0]], "age of scrolls": [["Orrugor e Orrolur", "name", 0]], "underhall": [["uthr", "n", 0]], "stone citadel": [["uthr", "n", 0]], "root of a mountain": [["krech", "n", 0]], "foundation": [["krech", "n", 0]], "rootseer": [["krechsyn", "n", 0]], "shaman": [["hamrin", "n", 0]], "book": [["torm", "n", 0]], "record": [["torm", "n", 0], ["torm", "v", 0]], "chronicle": [["torm", "n", 0]], "scribe": [["tormrin", "n", 0]], "recorder": [["tormrin", "n", 0]], "library": [["tormuth", "n", 0]], "vellum": [["pell", "n", 0]], "page": [["pell", "n", 0]], "skin": [["pell", "n", 0]], "hide": [["pell", "n", 0], ["dulm", "v", 0]], "ink": [["nokhuma", "n", 0]], "quill": [["pinn", "n", 0]], "pen": [["pinn", "n", 0]], "rune": [["rist", "n", 0]], "letter": [["rist", "n", 0]], "write": [["rist", "v", 0]], "carve runes": [["rist", "v", 0]], "scroll": [["orrol", "n", 0]], "word": [["foth", "n", 0]], "speech": [["foth", "n", 0]], "language": [["foth", "n", 0]], "voice": [["fo", "n", 0]], "speak": [["fo", "v", 0]], "say": [["fo", "v", 0]], "tale": [["the", "n", 0]], "story": [["the", "n", 0]], "tell": [["the", "v", 0]], "retell": [["thethe", "v", 0]], "name": [["oth", "n", 0], ["oth", "v", 0]], "read": [["lath", "v", 0]], "knowledge": [["chen", "n", 0]], "know": [["chen", "v", 0]], "scholar": [["chenrin", "n", 0]], "school": [["chenuth", "n", 0]], "wisdom": [["selchen", "n", 0]], "wise": [["selchen", "adj", 0]], "teach": [["darr", "v", 0]], "teacher": [["darrin", "n", 0]], "learn": [["lemm", "v", 0]], "study": [["lemm", "v", 0], ["gesk", "v", 0]], "student": [["lemmrin", "n", 0]], "memory": [["mund", "n", 0]], "remember": [["mund", "v", 0]], "forget": [["namund", "v", 0]], "secret": [["dulm", "n", 0]], "hidden": [["dulm", "adj", 0]], "reveal": [["ilud", "v", 0]], "history": [["thetorm", "n", 0]], "oath": [["thrafoth", "n", 0]], "pledge": [["thrafoth", "n", 0]], "pact": [["dalfoth", "n", 0]], "agreement": [["dalfoth", "n", 0]], "trade": [["skif", "n", 0], ["skif", "v", 0]], "barter": [["skif", "n", 0]], "fate": [["lunthe", "n", 0]], "stone": [["skal", "n", 0]], "rock": [["skal", "n", 0]], "mountain": [["skalahai", "n", 0]], "hill": [["brynn", "n", 0]], "cave": [["gath", "n", 0]], "tunnel": [["dolm", "n", 0]], "passage": [["dolm", "n", 0]], "cliff": [["fell", "n", 0]], "vein of ore": [["vyr", "n", 0]], "ore": [["vyr", "n", 0]], "iron": [["isk", "n", 0]], "gold": [["solm", "n", 0]], "silver": [["nelm", "n", 0]], "copper": [["rutha", "n", 0]], "steel": [["khorr", "n", 0]], "metal": [["malm", "n", 0]], "diamond": [["khael", "n", 0]], "gem": [["skaldirra", "n", 0]], "jewel": [["skaldirra", "n", 0]], "crystal": [["thrys", "n", 0]], "marble": [["bleth", "n", 0]], "coal": [["nokhskal", "n", 0]], "salt": [["sil", "n", 0]], "clay": [["mol", "n", 0]], "sand": [["sath", "n", 0]], "dust": [["doth", "n", 0]], "pick": [["akh", "n", 0]], "pickaxe": [["akh", "n", 0]], "hammer": [["trokh", "n", 0]], "chisel": [["skeft", "n", 0]], "anvil": [["hondur", "n", 0]], "forge": [["forruth", "n", 0], ["hondark", "v", 0]], "hearth": [["forruth", "n", 0], ["forsep", "n", 0]], "mould": [["gurm", "n", 0]], "cast": [["gurm", "n", 0]], "cast metal": [["gurm", "v", 0]], "carve": [["avag", "v", 0]], "sculpt": [["avag", "v", 0]], "carver": [["avagrin", "n", 0]], "sculptor": [["avagrin", "n", 0]], "make": [["dom", "v", 0]], "do": [["dom", "v", 0]], "shape": [["dom", "v", 0]], "build": [["dom", "v", 0]], "builder": [["domrin", "n", 0]], "engineer": [["domrin", "n", 0]], "shaper": [["domrin", "n", 0]], "mason": [["skalrin", "n", 0]], "smith": [["khorrin", "n", 0], ["hondark", "v", 0]], "woodworker": [["balrin", "n", 0]], "carpenter": [["balrin", "n", 0]], "work": [["ark", "n", 0], ["ark", "v", 0]], "labour": [["ark", "n", 0]], "craft": [["lyst", "n", 0]], "skill": [["lyst", "n", 0]], "art": [["lyst", "n", 0]], "tool": [["kev", "n", 0]], "rope": [["rapp", "n", 0]], "chain": [["kett", "n", 0]], "key": [["nyl", "n", 0]], "seal": [["thrad", "v", 0]], "bind": [["thrad", "v", 0]], "beam": [["balth", "n", 0]], "plank": [["balth", "n", 0]], "saw": [["khrev", "n", 0]], "wheel": [["khul", "n", 0]], "house": [["bur", "n", 0]], "home": [["bur", "n", 0]], "dwelling": [["bur", "n", 0]], "dwell": [["bur", "v", 0]], "city": [["burgor", "n", 0]], "village": [["burlys", "n", 0]], "town": [["burlys", "n", 0]], "hall": [["hull", "n", 0]], "kingdom": [["hernuth", "n", 0]], "realm": [["hernuth", "n", 0]], "wall": [["barr", "n", 0]], "door": [["gann", "n", 0]], "open": [["gann", "v", 0]], "gate": [["ganngor", "n", 0]], "close": [["nagann", "v", 0]], "shut": [["nagann", "v", 0]], "pillar": [["stabb", "n", 0]], "stair": [["uthel", "n", 0]], "stairs": [["uthel", "n", 0]], "roof": [["kepp", "n", 0]], "arch": [["arkh", "n", 0]], "tower": [["hairn", "n", 0]], "bridge": [["thonskal", "n", 0]], "fireside": [["forsep", "n", 0]], "road": [["dath", "n", 0]], "path": [["dath", "n", 0]], "way": [["dath", "n", 0]], "secret path": [["dulmdath", "n", 0]], "map": [["dathpell", "n", 0]], "land": [["marr", "n", 0]], "ground": [["theth", "n", 0]], "earth": [["theth", "n", 0]], "soil": [["theth", "n", 0]], "floor": [["theth", "n", 0]], "person": [["dan", "n", 0]], "man": [["arro", "n", 0]], "male": [["arro", "n", 0]], "woman": [["ena", "n", 0]], "female": [["ena", "n", 0]], "child": [["lio", "n", 0]], "son": [["dorr", "n", 0]], "daughter": [["venn", "n", 0]], "mother": [["ama", "n", 0]], "father": [["abu", "n", 0]], "sibling": [["amm", "n", 0]], "brother": [["ammar", "n", 0]], "sister": [["ammen", "n", 0]], "mate": [["kham", "n", 0]], "spouse": [["kham", "n", 0]], "husband": [["kham", "n", 0]], "wife": [["kham", "n", 0]], "marry": [["kham", "v", 0]], "bride": [["khamisi", "n", 0]], "bridegroom": [["khamisi", "n", 0]], "clan": [["kalm", "n", 0]], "kin": [["kalm", "n", 0]], "family": [["kalm", "n", 0]], "ancestor": [["endodan", "n", 0]], "elder": [["endorin", "n", 0]], "heir": [["lunrin", "n", 0]], "descendant": [["lunrin", "n", 0]], "line of descent": [["lun", "n", 0]], "lineage": [["lun", "n", 0]], "friend": [["sola", "n", 0]], "companion": [["sola", "n", 0]], "enemy": [["nasola", "n", 0]], "stranger": [["nachen", "n", 0]], "unknown": [["nachen", "adj", 0]], "lord": [["hern", "n", 0]], "ruler": [["hern", "n", 0]], "king": [["hern", "n", 0]], "rule": [["hern", "v", 0]], "captain": [["golrin", "n", 0]], "leader": [["golrin", "n", 0]], "breather": [["hasrin", "n", 0]], "life-giver": [["hasrin", "n", 0]], "breathe life into": [["hasulo", "v", 0]], "spirit": [["ham", "n", 0]], "ghost": [["nauhas", "n", 0]], "fight": [["grakh", "n", 0], ["grakh", "v", 0]], "battle": [["grakh", "n", 0]], "war": [["grakhgor", "n", 0]], "soldier": [["grakhrin", "n", 0]], "warrior": [["skarrin", "n", 0]], "guard": [["skeldrin", "n", 0], ["thul", "v", 0]], "warden": [["thulrin", "n", 0]], "keeper": [["thulrin", "n", 0]], "constable": [["thulrin", "n", 0]], "sword": [["skar", "n", 0]], "blade": [["skar", "n", 0]], "knife": [["skarlys", "n", 0]], "dagger": [["skarlys", "n", 0]], "shield": [["skeld", "n", 0]], "defend": [["skeld", "v", 0]], "helmet": [["golskeld", "n", 0]], "armour": [["hamr", "n", 0]], "spear": [["lanth", "n", 0]], "axe": [["khol", "n", 0]], "bow": [["iev", "n", 0]], "arrow": [["fleth", "n", 0]], "victory": [["thurr", "n", 0]], "win": [["thurr", "v", 0]], "defeat": [["nathurr", "n", 0]], "lose a fight": [["nathurr", "v", 0]], "honour": [["orn", "n", 0], ["orn", "v", 0]], "shame": [["naorn", "n", 0]], "glory": [["ilorn", "n", 0]], "discipline": [["thalm", "n", 0]], "shadow": [["skath", "n", 0]], "silence": [["naufo", "n", 0]], "silent": [["naufo", "adj", 0]], "dark things below": [["nokhur", "n", 0]], "strike": [["drub", "v", 0]], "hit": [["drub", "v", 0]], "attack": [["grakhdi", "v", 0]], "kill": [["morrudom", "v", 0]], "butcher": [["skerr", "v", 0]], "cut": [["skerr", "v", 0]], "heart": [["orm", "n", 0]], "liver": [["dumorm", "n", 0]], "eye": [["ylm", "n", 0]], "hand": [["dagg", "n", 0]], "head": [["gol", "n", 0]], "lead": [["gol", "v", 0]], "mouth": [["mun", "n", 0]], "blood": [["rwa", "n", 0]], "bone": [["bru", "n", 0]], "breath": [["has", "n", 0]], "breathe": [["has", "v", 0]], "wing": [["iela", "n", 0]], "arm": [["brakh", "n", 0]], "leg": [["stamm", "n", 0]], "foot": [["trod", "n", 0]], "face": [["ansa", "n", 0]], "beard": [["hlenn", "n", 0]], "hair": [["kemm", "n", 0]], "tooth": [["tand", "n", 0]], "ear": [["lusk", "n", 0]], "nose": [["nas", "n", 0]], "back": [["rugg", "n", 0]], "chest": [["kist", "n", 0]], "body": [["khom", "n", 0]], "sky": [["ael", "n", 0]], "sun": [["ilun", "n", 0]], "moon": [["nel", "n", 0]], "star": [["dirra", "n", 0]], "light": [["ilu", "n", 0], ["lett", "adj", 1]], "bright": [["ilu", "adj", 0]], "white": [["ilu", "adj", 0]], "shine": [["ilu", "v", 0]], "darkness": [["nokh", "n", 0]], "dark": [["nokh", "adj", 0]], "black": [["nokh", "adj", 0]], "day": [["ilo", "n", 0]], "night": [["noko", "n", 0]], "water": [["uma", "n", 0]], "sea": [["ulma", "n", 0]], "river": [["ren", "n", 0]], "lake": [["mer", "n", 0]], "island": [["ulmaskal", "n", 0]], "valley": [["dalm", "n", 0]], "wind": [["surru", "n", 0]], "storm": [["surrugor", "n", 0]], "thunder": [["brum", "n", 0]], "lightning": [["blik", "n", 0]], "cloud": [["olmael", "n", 0]], "mist": [["olm", "n", 0]], "fog": [["olm", "n", 0]], "rain": [["drus", "n", 0]], "snow": [["fann", "n", 0]], "ice": [["gelskal", "n", 0]], "fire": [["for", "n", 0]], "hot": [["for", "adj", 0]], "smoke": [["olmafor", "n", 0]], "ash": [["fornau", "n", 0]], "tree": [["bal", "n", 0]], "wood": [["bal", "n", 0]], "forest": [["hald", "n", 0]], "leaf": [["bela", "n", 0]], "root of a plant": [["dru", "n", 0]], "seed": [["osi", "n", 0]], "flower": [["bluth", "n", 0]], "grass": [["gerr", "n", 0]], "field": [["akr", "n", 0]], "mushroom": [["skuppa", "n", 0]], "beast": [["gar", "n", 0]], "animal": [["gar", "n", 0]], "raven": [["kra", "n", 0]], "bird": [["ielrin", "n", 0]], "wolf": [["fulg", "n", 0]], "bat": [["nokhiel", "n", 0]], "spider": [["skuth", "n", 0]], "web": [["skuthlun", "n", 0]], "worm": [["wurm", "n", 0]], "wyrm": [["wurm", "n", 0]], "snake": [["sith", "n", 0]], "fish": [["lakh", "n", 0]], "bear": [["ursk", "n", 0]], "horse": [["hesk", "n", 0]], "goat": [["brynngar", "n", 0]], "dog": [["gurr", "n", 0]], "food": [["namm", "n", 0]], "feast": [["nammgor", "n", 0]], "bread": [["melth", "n", 0]], "meat": [["khar", "n", 0]], "ale": [["brusk", "n", 0]], "beer": [["brusk", "n", 0]], "cup": [["kopp", "n", 0]], "bowl": [["sild", "n", 0]], "time": [["orru", "n", 0]], "hour": [["orrlys", "n", 0]], "month": [["nelorru", "n", 0]], "season": [["tidd", "n", 0]], "year": [["ien", "n", 0]], "age": [["orrugor", "n", 0]], "era": [["orrugor", "n", 0]], "morning": [["ilana", "n", 0]], "evening": [["ilul", "n", 0]], "yesterday": [["iloka", "adv", 0]], "tomorrow": [["ilovi", "adv", 0]], "today": [["eynilo", "adv", 0]], "past": [["kaorru", "n", 0]], "future": [["viorru", "n", 0]], "now": [["nu", "adv", 0]], "soon": [["nuvi", "adv", 0]], "beginning": [["ana", "n", 0]], "begin": [["ana", "v", 0]], "end": [["ul", "n", 0], ["ul", "v", 0]], "always": [["urrorru", "adv", 0]], "forever": [["urrorru", "adv", 0]], "never": [["naorru", "adv", 0]], "often": [["olorru", "adv", 0]], "then": [["osorru", "adv", 0]], "love": [["lym", "n", 0], ["lym", "v", 0]], "hate": [["nalym", "n", 0], ["nalym", "v", 0]], "fear": [["skel", "n", 0], ["skel", "v", 0]], "scorn": [["lethm", "n", 0], ["lethm", "v", 0]], "pity": [["mild", "n", 0], ["mild", "v", 0]], "devotion": [["khamorm", "n", 0]], "hope": [["ilvel", "n", 0], ["ilvel", "v", 0]], "joy": [["gleth", "n", 0]], "sorrow": [["harm", "n", 0]], "anger": [["vreth", "n", 0]], "greed": [["girr", "n", 0]], "wanderlust": [["dathvel", "n", 0]], "corruption": [["rotha", "n", 0]], "rot": [["rotha", "n", 0]], "purpose": [["ulvel", "n", 0]], "worth": [["gild", "n", 0]], "value": [["gild", "n", 0]], "payment": [["gild", "n", 0]], "pay": [["gild", "v", 0]], "truth": [["sel", "n", 0]], "true": [["sel", "adj", 0]], "right": [["sel", "adj", 0]], "lie": [["nasel", "n", 0], ["naselfo", "v", 0]], "false": [["nasel", "adj", 0]], "wrong": [["nasel", "adj", 0]], "peace": [["sama", "n", 0]], "power": [["dur", "n", 0]], "strength": [["dur", "n", 0]], "mighty": [["dur", "adj", 0]], "strong": [["dur", "adj", 0]], "sacred": [["helm", "adj", 0]], "holy": [["helm", "adj", 0]], "courage": [["dorn", "n", 0]], "brave": [["dorn", "adj", 0]], "be": [["es", "v", 0]], "exist": [["es", "v", 0]], "become": [["esga", "v", 0]], "happen": [["esdi", "v", 0]], "have": [["mai", "v", 0]], "own": [["mai", "v", 0]], "go": [["ga", "v", 0]], "come": [["di", "v", 0]], "return": [["rodi", "v", 0]], "bring": [["bordi", "v", 0]], "carry": [["bor", "v", 0]], "send": [["dove", "v", 0]], "travel": [["dathga", "v", 0]], "journey": [["dathga", "v", 0]], "wander": [["drif", "v", 0]], "climb": [["hairga", "v", 0]], "fall": [["pall", "v", 0]], "dig": [["doll", "v", 0]], "mine": [["doll", "v", 0]], "ask": [["hoth", "v", 0]], "question": [["hoth", "n", 0]], "answer": [["rofo", "v", 0], ["rofo", "n", 0]], "call": [["khal", "v", 0]], "give": [["obe", "v", 0]], "gift": [["obe", "n", 0]], "take": [["chel", "v", 0]], "keep": [["thul", "v", 0]], "hold": [["thul", "v", 0]], "protect": [["thul", "v", 0]], "find": [["lekh", "v", 0]], "lose": [["nalekh", "v", 0]], "seek": [["gesk", "v", 0]], "search": [["gesk", "v", 0]], "test": [["gesk", "v", 0]], "thought": [["mynn", "n", 0]], "idea": [["mynn", "n", 0]], "think": [["mynn", "v", 0]], "believe": [["selm", "v", 0]], "see": [["syn", "v", 0]], "look": [["syn", "v", 0]], "watch": [["synthul", "v", 0]], "hear": [["lus", "v", 0]], "listen": [["lus", "v", 0]], "feel": [["thim", "v", 0]], "touch": [["rakh", "v", 0]], "want": [["vel", "v", 0]], "wish": [["vel", "v", 0]], "need": [["thar", "v", 0]], "must": [["thar", "v", 0]], "duty": [["thar", "n", 0]], "can": [["kunn", "v", 0]], "be able": [["kunn", "v", 0]], "life": [["ulo", "n", 0]], "live": [["ulo", "v", 0]], "alive": [["ulo", "adj", 0]], "death": [["morru", "n", 0]], "die": [["morru", "v", 0]], "break": [["skor", "v", 0]], "burn": [["forru", "v", 0]], "grow": [["olu", "v", 0]], "eat": [["nam", "v", 0]], "drink": [["silu", "v", 0]], "walk": [["thun", "v", 0]], "follow": [["fylg", "v", 0]], "run": [["ras", "v", 0]], "fly": [["iel", "v", 0]], "sit": [["sep", "v", 0]], "stand": [["thal", "v", 0]], "sleep": [["nem", "v", 0]], "wake": [["erru", "v", 0]], "wait": [["dav", "v", 0]], "help": [["sokh", "v", 0], ["sokh", "n", 0]], "song": [["larru", "n", 0]], "sing": [["larru", "v", 0]], "weep": [["umla", "v", 0]], "laugh": [["gell", "v", 0]], "serve": [["tham", "v", 0]], "choose": [["kuth", "v", 0]], "decide": [["kuth", "v", 0]], "sink": [["dumga", "v", 0], ["dumdom", "v", 1]], "drown": [["dumdom", "v", 0]], "count": [["rekk", "v", 0]], "measure": [["mett", "v", 0]], "send word home": [["hend", "v", 0]], "share knowledge": [["chenobe", "v", 0]], "great": [["gor", "adj", 0]], "big": [["gor", "adj", 0]], "large": [["gor", "adj", 0]], "small": [["lys", "adj", 0]], "little": [["lys", "adj", 0]], "short": [["lys", "adj", 0]], "good": [["ela", "adj", 0]], "evil": [["drogg", "adj", 0]], "bad": [["drogg", "adj", 0]], "old": [["endo", "adj", 0]], "ancient": [["endo", "adj", 0]], "new": [["isi", "adj", 0]], "young": [["isi", "adj", 0]], "high": [["hai", "adj", 0]], "tall": [["hai", "adj", 0]], "rise": [["hai", "v", 0]], "deep": [["dum", "adj", 0]], "first": [["ane", "adj", 0]], "last": [["ule", "adj", 0]], "long": [["dyr", "adj", 0]], "wide": [["breth", "adj", 0]], "narrow": [["threng", "adj", 0]], "heavy": [["thung", "adj", 0]], "hard": [["dros", "adj", 0]], "soft": [["lin", "adj", 0]], "gentle": [["lin", "adj", 0]], "weak": [["nadur", "adj", 0]], "fast": [["rask", "adj", 0]], "quick": [["rask", "adj", 0]], "slow": [["lent", "adj", 0]], "cold": [["gel", "adj", 0]], "warm": [["forlys", "adj", 0]], "wet": [["fukt", "adj", 0]], "dry": [["sekk", "adj", 0]], "full": [["fyll", "adj", 0]], "nothing": [["nau", "n", 0]], "none": [["nau", "n", 0]], "empty": [["nau", "adj", 0]], "rich": [["rikh", "adj", 0]], "poor": [["naurikh", "adj", 0]], "beautiful": [["ilwen", "adj", 0]], "fair": [["ilwen", "adj", 0]], "ugly": [["nailwen", "adj", 0]], "proud": [["orngor", "adj", 0]], "humble": [["lysorm", "adj", 0]], "kind": [["ormela", "adj", 0]], "cruel": [["droggorm", "adj", 0]], "foolish": [["dulb", "adj", 0]], "fool": [["dulb", "n", 0]], "clever": [["skarp", "adj", 0]], "sharp": [["skarp", "adj", 0]], "unbreakable": [["naskore", "adj", 0]], "free": [["nathra", "adj", 0]], "unbound": [["nathra", "adj", 0]], "red": [["forre", "adj", 0]], "green": [["bale", "adj", 0]], "blue": [["aele", "adj", 0]], "grey": [["skale", "adj", 0]], "golden": [["solme", "adj", 0]], "same": [["sam", "adj", 0]], "like": [["sam", "prep", 0]], "as": [["sam", "prep", 0]], "other": [["osan", "adj", 0]], "half": [["mid", "n", 0]], "middle": [["mid", "n", 0]], "far": [["ferr", "adj", 0]], "near": [["nar", "adj", 0]], "alone": [["anan", "adj", 0]], "together": [["dalur", "adv", 0]], "only": [["anel", "adv", 0]], "many": [["olo", "adj", 0]], "much": [["olo", "adj", 0]], "few": [["se", "adj", 0]], "all": [["ur", "adj", 0]], "every": [["ur", "adj", 0]], "each": [["ur", "adj", 0]], "whole": [["ur", "adj", 0]], "i": [["ma", "pron", 0]], "me": [["ma", "pron", 0]], "we": [["mar", "pron", 0]], "us": [["mar", "pron", 0]], "you": [["thi", "pron", 0]], "he": [["ha", "pron", 0]], "she": [["ha", "pron", 0]], "it": [["ha", "pron", 0]], "him": [["ha", "pron", 0]], "her": [["ha", "pron", 0]], "they": [["har", "pron", 0]], "them": [["har", "pron", 0]], "self": [["sem", "pron", 0]], "this": [["eyn", "det", 0]], "these": [["eynur", "det", 0]], "that": [["os", "det", 0]], "which": [["os", "det", 0], ["hes", "det", 0]], "who": [["hom", "pron", 0], ["os", "det", 1]], "those": [["osur", "det", 0]], "what": [["he", "pron", 0]], "where": [["hal", "adv", 0]], "when": [["hen", "adv", 0]], "why": [["hefa", "adv", 0]], "how": [["heth", "adv", 0]], "here": [["eynal", "adv", 0]], "there": [["osal", "adv", 0]], "everything": [["urhe", "pron", 0]], "everyone": [["urhom", "pron", 0]], "everywhere": [["urhal", "adv", 0]], "some": [["ath", "det", 0]], "any": [["ath", "det", 0]], "someone": [["athom", "pron", 0]], "no one": [["nauhom", "pron", 0]], "nowhere": [["nauhal", "adv", 0]], "one": [["an", "num", 0]], "a": [["an", "num", 0]], "an": [["an", "num", 0]], "two": [["bes", "num", 0]], "three": [["dun", "num", 0]], "four": [["hudd", "num", 0]], "five": [["hon", "num", 0]], "six": [["sykh", "num", 0]], "seven": [["kru", "num", 0]], "eight": [["gom", "num", 0]], "nine": [["nai", "num", 0]], "ten": [["dekh", "num", 0]], "hundred": [["tava", "num", 0]], "thousand": [["mahl", "num", 0]], "the": [["o", "det", 0]], "of": [["e", "prep", 0]], "and": [["sa", "conj", 0]], "or": [["ve", "conj", 0]], "but": [["bun", "conj", 0]], "if": [["ef", "conj", 0]], "because": [["faos", "conj", 0]], "although": [["thokh", "conj", 0]], "in": [["i", "prep", 0]], "at": [["i", "prep", 0]], "within": [["i", "prep", 0]], "from": [["ro", "prep", 0]], "out of": [["ro", "prep", 0]], "than": [["ro", "prep", 0]], "since": [["ro", "prep", 0]], "to": [["che", "prep", 0]], "toward": [["che", "prep", 0]], "into": [["che", "prep", 0]], "with": [["dal", "prep", 0]], "beside": [["dal", "prep", 0]], "by": [["dal", "prep", 0]], "on": [["su", "prep", 0]], "upon": [["su", "prep", 0]], "over": [["su", "prep", 0]], "above": [["su", "prep", 0], ["haial", "adv", 0]], "under": [["bel", "prep", 0]], "beneath": [["bel", "prep", 0]], "below": [["bel", "prep", 0], ["dumal", "adv", 0]], "through": [["thon", "prep", 0]], "across": [["thon", "prep", 0]], "for": [["fa", "prep", 0]], "about": [["ab", "prep", 0]], "concerning": [["ab", "prep", 0]], "among": [["hun", "prep", 0]], "against": [["ar", "prep", 0]], "without": [["nadal", "prep", 0]], "around": [["umb", "prep", 0]], "behind": [["bak", "prep", 0]], "beyond": [["ulthon", "prep", 0]], "until": [["ulche", "prep", 0]], "before": [["ka", "prep", 0]], "after": [["vi", "prep", 0]], "not": [["na", "part", 0]], "no": [["na", "part", 0]], "yes": [["ia", "part", 0]], "let": [["lat", "v", 0]], "allow": [["lat", "v", 0]], "use": [["brukh", "v", 0]], "join": [["dalga", "v", 0]], "meet": [["mott", "v", 0]], "leave": [["roga", "v", 0]], "depart": [["roga", "v", 0]], "arrive": [["chedi", "v", 0]], "enter": [["iga", "v", 0]], "stay": [["dvel", "v", 0]], "remain": [["dvel", "v", 0]], "change": [["skift", "n", 0], ["skift", "v", 0]], "turn": [["snu", "v", 0]], "pull": [["drag", "v", 0]], "push": [["skuf", "v", 0]], "throw": [["kast", "v", 0]], "catch": [["fang", "v", 0]], "pray": [["bith", "v", 0]], "bless": [["helmdom", "v", 0]], "curse": [["droggfo", "n", 0], ["droggfo", "v", 0]], "swear": [["thrafo", "v", 0]], "promise": [["thrafo", "v", 0]], "deceive": [["naselfo", "v", 0]], "dream": [["nemthe", "n", 0], ["nemthe", "v", 0]], "game": [["leik", "n", 0]], "play": [["leik", "v", 0]], "steal": [["dulmchel", "v", 0]], "hunt": [["gargesk", "v", 0]], "swim": [["umga", "v", 0]], "heal": [["hael", "v", 0]], "wound": [["sar", "n", 0], ["sar", "v", 0]], "suffer": [["thol", "v", 0]], "endure": [["thol", "v", 0]], "rest": [["vil", "n", 0], ["vil", "v", 0]], "mark": [["merk", "n", 0], ["merk", "v", 0]], "sign": [["merk", "n", 0]], "omen": [["merk", "n", 0]], "obey": [["lusthul", "v", 0]], "judge": [["selmett", "v", 0]], "fail": [["brest", "v", 0]], "save": [["berg", "v", 0]], "rescue": [["berg", "v", 0]], "flee": [["flyt", "v", 0]], "escape": [["flyt", "v", 0]], "show": [["syndom", "v", 0]], "explain": [["chendom", "v", 0]], "understand": [["belthal", "v", 0]], "stop": [["stann", "v", 0]], "put": [["sett", "v", 0]], "place": [["sett", "v", 0], ["uth", "n", 0]], "set": [["sett", "v", 0]], "lie down": [["liga", "v", 0]], "plant": [["osidom", "v", 0], ["olun", "n", 0]], "thing": [["eth", "n", 0]], "law": [["rett", "n", 0]], "queen": [["hernen", "n", 0]], "servant": [["thamrin", "n", 0]], "slave": [["thradrin", "n", 0]], "master of a craft": [["lystrin", "n", 0]], "guest": [["dirin", "n", 0]], "host": [["burrin", "n", 0]], "treasure": [["gildur", "n", 0]], "coin": [["mynt", "n", 0]], "money": [["mynt", "n", 0]], "number": [["tal", "n", 0]], "window": [["ylmgann", "n", 0]], "bed": [["nemuth", "n", 0]], "table": [["bord", "n", 0]], "chair": [["seputh", "n", 0]], "seat": [["seputh", "n", 0]], "lamp": [["ilukopp", "n", 0]], "candle": [["forpinn", "n", 0]], "torch": [["forbal", "n", 0]], "flame": [["forlun", "n", 0]], "cloth": [["veth", "n", 0]], "cloak": [["kappa", "n", 0]], "boot": [["trodpell", "n", 0]], "ring": [["khulys", "n", 0]], "crown": [["golkhul", "n", 0]], "sickness": [["sott", "n", 0]], "poison": [["drogguma", "n", 0]], "colour": [["litt", "n", 0]], "sound": [["lusa", "n", 0]], "echo": [["fofo", "n", 0]], "cause": [["sakh", "n", 0]], "reason": [["sakh", "n", 0]], "week": [["kruilo", "n", 0]], "moment": [["skimm", "n", 0]], "very": [["ulg", "adv", 0]], "also": [["eks", "adv", 0]], "again": [["eft", "adv", 0]], "still": [["enn", "adv", 0]], "yet": [["enn", "adv", 0]], "already": [["kanu", "adv", 0]], "almost": [["nari", "adv", 0]], "perhaps": [["efsel", "adv", 0]], "more": [["olra", "adj", 0]], "most": [["olul", "adj", 0]], "less": [["sera", "adj", 0]], "least": [["seul", "adj", 0]], "both": [["besur", "det", 0]], "something": [["athe", "pron", 0]], "anything": [["athe", "pron", 0]], "so": [["thos", "conj", 0]], "therefore": [["thos", "conj", 0]], "thus": [["thos", "conj", 0]], "unless": [["efna", "conj", 0]], "up": [["haial", "adv", 0]], "down": [["dumal", "adv", 0]], "between": [["mell", "prep", 0]], "stone liver": [["skalorm", "n", 0]], "stone-hard organs of the avaggdu": [["skalorm", "n", 0]], "hello": [["elailo", "part", 0]], "greetings": [["elailo", "part", 0]], "farewell": [["dathela", "part", 0]], "goodbye": [["dathela", "part", 0]], "thank you": [["ornthi", "part", 0]], "thanks": [["ornthi", "part", 0]], "monster": [["nokhgar", "n", 0]], "spell": [["chenfo", "n", 0]], "charm": [["chenfo", "n", 0]], "army": [["fylkh", "n", 0]], "grave": [["morruth", "n", 0]], "tomb": [["morruth", "n", 0]], "birth": [["hasana", "n", 0]], "be born": [["hasana", "v", 0]], "council": [["dalmott", "n", 0]], "guild": [["lystkalm", "n", 0]], "spy": [["dulmsyn", "n", 0]], "messenger": [["hendrin", "n", 0]], "grandfather": [["endabu", "n", 0]], "grandmother": [["endama", "n", 0]], "east": [["ilanuth", "n", 0]], "west": [["iluluth", "n", 0]], "north": [["geluth", "n", 0]], "south": [["foruth", "n", 0]]}};
+var STROKES = {"A": [[[1, 15], [5, 5], [9, 15]], [[5, 17], [5, 20]], [[3.5, 20], [6.5, 20]]], "E": [[[1, 5], [5, 15], [9, 5]], [[5, 17], [5, 20]], [[3.5, 20], [6.5, 20]]], "I": [[[5, 4], [5, 16]], [[3, 4], [7, 4]], [[5, 17], [5, 20]], [[3.5, 20], [6.5, 20]]], "O": [[[5, 4], [9, 10], [5, 16], [1, 10], [5, 4]], [[5, 17], [5, 20]], [[3.5, 20], [6.5, 20]]], "U": [[[1, 5], [1, 15], [9, 15], [9, 5]], [[5, 9], [5, 15]], [[5, 17], [5, 20]], [[3.5, 20], [6.5, 20]]], "Y": [[[1, 1], [5, 9], [9, 1]], [[5, 9], [5, 20]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "TH": [[[5, 0], [5, 20]], [[5, 10], [1, 4]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "T": [[[5, 0], [5, 20]], [[5, 1], [1.5, 1]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "D": [[[5, 0], [5, 20]], [[5, 10], [1, 4]], [[5, 10], [1, 16]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "K": [[[5, 0], [5, 20]], [[5, 10], [9, 4]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "KH": [[[5, 0], [5, 20]], [[5, 10], [9, 4]], [[2.5, 15], [7.5, 15]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "G": [[[5, 0], [5, 20]], [[5, 10], [9, 4]], [[5, 10], [9, 16]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "CH": [[[5, 0], [5, 20]], [[5, 6], [1, 10], [5, 14]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "B": [[[5, 0], [5, 20]], [[5, 8], [9, 4]], [[5, 14], [9, 10]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "P": [[[5, 0], [5, 20]], [[5, 6], [9, 10]], [[5, 12], [9, 16]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "S": [[[2, 1], [8, 1]], [[8, 1], [2, 8], [8, 12], [2, 19]], [[5, 17], [5, 20]], [[3.5, 20], [6.5, 20]]], "H": [[[5, 0], [5, 20]], [[1, 6], [9, 14]], [[9, 6], [1, 14]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "F": [[[5, 0], [5, 20]], [[5, 9], [1, 14]], [[5, 9], [9, 14]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "V": [[[5, 0], [5, 20]], [[5, 2], [1, 7]], [[5, 2], [9, 7]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "W": [[[1, 15], [1, 5], [9, 5], [9, 15]], [[5, 5], [5, 11]], [[5, 17], [5, 20]], [[3.5, 20], [6.5, 20]]], "M": [[[1, 0], [1, 20]], [[9, 0], [9, 20]], [[1, 3], [5, 11], [9, 3]], [[1, 20], [-1.5, 23]], [[1, 20], [3.5, 23]], [[9, 20], [6.5, 23]], [[9, 20], [11.5, 23]]], "N": [[[5, 0], [5, 20]], [[1, 10], [9, 10]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "L": [[[5, 0], [5, 20]], [[5, 2], [9, 6], [9, 11]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]], "R": [[[5, 0], [5, 20]], [[5, 5], [9, 8], [5, 11], [9, 14], [5, 17]], [[5, 20], [2.5, 23]], [[5, 20], [7.5, 23]]]};
+var RUNEINFO = [["A", "ah", "avag", "to carve"], ["E", "eh", "es", "to be"], ["I", "ee", "ilu", "light"], ["O", "oh", "olm", "mist"], ["U", "oo", "ur", "all"], ["Y", "i in 'bin'", "ylm", "eye"], ["TH", "th in 'thin'", "the", "tale"], ["T", "t", "torm", "record"], ["D", "d", "dagg", "hand"], ["K", "k", "kra", "raven"], ["KH", "ch in 'loch'", "khael", "diamond"], ["G", "g", "Ged", "Ged"], ["CH", "sh", "chen", "to know"], ["B", "b", "bal", "tree"], ["P", "p", "pell", "vellum"], ["S", "s", "skal", "stone"], ["H", "h", "has", "breath"], ["F", "f", "for", "fire"], ["V", "v", "vyr", "vein of ore"], ["W", "w", "wota", "Wota"], ["M", "m", "morru", "death"], ["N", "n", "nau", "nothing"], ["L", "l", "lun", "line of descent"], ["R", "rolled r", "rwa", "blood"]];
+</script>
+<script>
+// Fotheged translator core. Expects LEX = {rows, idx}. Pure functions only.
+var FG = (function () {
+  var IRREG_VERB = {
+    was:"be",were:"be",been:"be",am:"be",is:"be",are:"be",being:"be",
+    had:"have",has:"have",did:"do",does:"do",done:"do",went:"go",gone:"go",came:"come",
+    said:"say",told:"tell",gave:"give",given:"give",took:"take",taken:"take",held:"hold",
+    kept:"keep",found:"find",knew:"know",known:"know",thought:"think",saw:"see",seen:"see",
+    heard:"hear",felt:"feel",made:"make",built:"build",broke:"break",broken:"break",
+    burnt:"burn",grew:"grow",grown:"grow",ate:"eat",eaten:"eat",drank:"drink",drunk:"drink",
+    ran:"run",flew:"fly",flown:"fly",sat:"sit",stood:"stand",slept:"sleep",woke:"wake",
+    woken:"wake",fought:"fight",fell:"fall",fallen:"fall",spoke:"speak",spoken:"speak",
+    wrote:"write",written:"write",taught:"teach",learnt:"learn",brought:"bring",sent:"send",
+    began:"begin",begun:"begin",lost:"lose",won:"win",hid:"hide",hidden:"hide",sang:"sing",
+    sung:"sing",struck:"strike",chose:"choose",chosen:"choose",led:"lead",left:"leave",
+    met:"meet",became:"become",sank:"sink",sunk:"sink",dug:"dig",wept:"weep",bore:"carry",
+    born:"born",carved:"carve",swore:"swear",sworn:"swear",bound:"bind",stole:"steal",
+    stolen:"steal",understood:"understand",forgot:"forget",forgotten:"forget",
+    threw:"throw",thrown:"throw",caught:"catch",slew:"kill",slain:"kill",bled:"bleed",
+    rose:"rise",risen:"rise",drew:"pull",drove:"push",shone:"shine",lay:"lie down",
+    paid:"pay",sought:"seek",bought:"trade",sold:"trade",fled:"flee",dreamt:"dream",
+    meant:"mean",put:"put",set:"set",cut:"cut",let:"let",hit:"strike",read:"read",
+    could:"can",would:"will",should:"must"
+  };
+  var IRREG_NOUN = {men:"man",women:"woman",children:"child",feet:"foot",teeth:"tooth",
+    people:"person",dwarves:"dwarf",dwarfs:"dwarf",wolves:"wolf",knives:"knife",
+    lives:"life",leaves:"leaf",selves:"self",mice:"mouse",daughters:"daughter",sons:"son",
+    brethren:"brother"};
+  var IRREG_ADJ = {better:["good","ra"],best:["good","ul"],worse:["evil","ra"],worst:["evil","ul"],
+    more:["many","ra"],most:["many","ul"],less:["few","ra"],least:["few","ul"],elder:["old","ra"],eldest:["old","ul"]};
+  var NAMES = {irik:"Irrist",hjallkar:"Challkar",hjalkarr:"Challkar",reynir:"Rennolo",reynrir:"Rennolo",
+    mord:"Mordath",ulfar:"Ulhond",ketil:"Khetthal",skardi:"Skathar",guthrot:"Guthdarr",eyvind:"Evael",
+    gunlaug:"Gundulm",arta:"Artha",hidra:"Hiddas",odana:"Odanna",frigabi:"Frigylm",uote:"Wota",
+    arrja:"Arrilwen",gehildr:"Gethvel",brynhild:"Brynnith",ugadne:"Ugaskuth",midmadra:"Midmahl",
+    uthrecrech:"Uthrekrech",hullskriven:"Hulltormur",rivenrook:"Krabur",eormen:"Haidu",eorman:"Haidu",
+    corvus:"Kradu",gothgaard:"Skarthul",avaggdu:"Avaggdu",brynndu:"Brynndu",ged:"Ged",urthe:"Urthe",
+    skyald:"Skyald",tormegedlun:"Tormegedlun",teller:"Therrin",fotheged:"Fotheged",thelun:"Thelun"};
+  var PRON = {i:"ma",me:"ma",we:"mar",us:"mar",you:"thi",he:"ha",him:"ha",she:"ha",it:"ha",they:"har",them:"har",
+    myself:"ma sem",ourselves:"mar sem",yourself:"thi sem",himself:"ha sem",herself:"ha sem",itself:"ha sem",themselves:"har sem"};
+  var POSS = {my:"ma",our:"mar",your:"thi",his:"ha",its:"ha",their:"har",her:"ha"};
+  var DET = {the:"o",a:"an",an:"an","this":"eyn","that":"os",these:"eynur",those:"osur"};
+  var QUANT = {all:"ur",every:"ur",each:"ur",many:"olo",much:"olo",few:"se",some:"ath",any:"ath",no:"nau",both:"besur",one:"an",two:"bes",three:"dun",four:"hudd",five:"hon",six:"sykh",seven:"kru",eight:"gom",nine:"nai",ten:"dekh",hundred:"tava",thousand:"mahl"};
+  var DIGIT = {"1":"an","2":"bes","3":"dun","4":"hudd","5":"hon","6":"sykh","7":"kru","8":"gom","9":"nai","10":"dekh","100":"tava","1000":"mahl"};
+  var BE = {be:1,am:1,is:1,are:1,was:1,were:1,been:1,being:1};
+  var PASTBE = {was:1,were:1};
+  var EXTRA = {light:[["ilu","adj"]],dwarf:[["Avaggdu","n"]],dwarves:[["Avaggdu","n"]],bear:[["ursk","n"],["bor","v"]],
+    bind:[["thrad","v"]],carve:[["avag","v"]],say:[["fo","v"]],speak:[["fo","v"]],mean:[["fo","v"]],cut:[["skerr","v"]],
+    born:[["hasana","v"]],own:[["mai","v"]],kill:[["morrudom","v"]],writing:[["rist","n"]],word:[["foth","n"]],
+    shall:[],world:[["Urthe","n"]],sink:[["dumdom","v"],["dumga","v"]],hello:[["elailo","part"]],thanks:[["ornthi","part"]]};
+  var VOW = /[aeiouy]$/;
+
+  function lookup(key) {
+    var out = [];
+    if (EXTRA[key]) EXTRA[key].forEach(function (e) { out.push({w:e[0],pos:e[1]}); });
+    (LEX.idx[key] || []).forEach(function (e) { out.push({w:e[0],pos:e[1]}); });
+    return out;
+  }
+  // candidate analyses of an English word: [{lemma, feat, entries}]
+  function analyse(word) {
+    var w = word.toLowerCase(), res = [];
+    function tryL(lemma, feat) { var e = lookup(lemma); if (e.length) res.push({lemma:lemma,feat:feat||{},entries:e}); }
+    tryL(w, {});
+    if (IRREG_VERB[w]) tryL(IRREG_VERB[w], {past:!(w in {is:1,are:1,am:1,be:1,being:1,has:1,does:1}), pp:true});
+    if (IRREG_NOUN[w]) tryL(IRREG_NOUN[w], {plural:true});
+    if (IRREG_ADJ[w]) tryL(IRREG_ADJ[w][0], {cmp:IRREG_ADJ[w][1]});
+    var m;
+    if ((m = w.match(/^(.+)ies$/))) tryL(m[1] + "y", {plural:true,s:true});
+    if ((m = w.match(/^(.+)es$/))) { tryL(m[1], {plural:true,s:true}); tryL(m[1] + "e", {plural:true,s:true}); }
+    if ((m = w.match(/^(.+[^s])s$/))) tryL(m[1], {plural:true,s:true});
+    if ((m = w.match(/^(.+)ied$/))) tryL(m[1] + "y", {past:true,pp:true});
+    if ((m = w.match(/^(.+)ed$/))) { tryL(m[1], {past:true,pp:true}); tryL(m[1] + "e", {past:true,pp:true});
+      if (/(.)\1$/.test(m[1])) tryL(m[1].slice(0, -1), {past:true,pp:true}); }
+    if ((m = w.match(/^(.+)ing$/))) { tryL(m[1], {ing:true}); tryL(m[1] + "e", {ing:true});
+      if (/(.)\1$/.test(m[1])) tryL(m[1].slice(0, -1), {ing:true}); }
+    if ((m = w.match(/^(.+)iest$/))) tryL(m[1] + "y", {cmp:"ul"});
+    if ((m = w.match(/^(.+)ier$/))) tryL(m[1] + "y", {cmp:"ra"});
+    if ((m = w.match(/^(.+)est$/))) { tryL(m[1], {cmp:"ul"}); tryL(m[1] + "e", {cmp:"ul"});
+      if (/(.)\1$/.test(m[1])) tryL(m[1].slice(0, -1), {cmp:"ul"}); }
+    if ((m = w.match(/^(.+)er$/))) { tryL(m[1], {cmp:"ra"}); tryL(m[1] + "e", {cmp:"ra"});
+      if (/(.)\1$/.test(m[1])) tryL(m[1].slice(0, -1), {cmp:"ra"}); }
+    if ((m = w.match(/^(.+)ily$/))) tryL(m[1] + "y", {adv:true});
+    if ((m = w.match(/^(.+)ly$/))) tryL(m[1], {adv:true});
+    // keep only entries compatible with the inflection
+    res.forEach(function (r) {
+      var f = r.feat;
+      r.entries = r.entries.filter(function (e) {
+        if (f.past || f.ing) return e.pos === "v" || (f.pp && e.pos === "adj");
+        if (f.s) return e.pos === "n" || e.pos === "v";
+        if (f.cmp || f.adv) return e.pos === "adj" || e.pos === "adv";
+        return true;
+      });
+    });
+    return res.filter(function (r) { return r.entries.length; });
+  }
+  function pick(an, want) { // want: array of pos in priority order
+    for (var i = 0; i < want.length; i++)
+      for (var j = 0; j < an.length; j++)
+        for (var k = 0; k < an[j].entries.length; k++)
+          if (an[j].entries[k].pos === want[i]) return {w:an[j].entries[k].w,pos:want[i],feat:an[j].feat,lemma:an[j].lemma};
+    return null;
+  }
+  function has(an, pos) { return !!pick(an, [pos]); }
+  function plural(w) { if (/\s/.test(w) || /^[A-Z]/.test(w)) return w; return w + (VOW.test(w) ? "r" : "ur"); }
+  function suffix(w, s) { return w + s; }
+
+  function expand(text) {
+    return text
+      .replace(/[’‘]/g, "'")
+      .replace(/\b(can)'t\b/gi, "$1 not").replace(/\bwon't\b/gi, "will not").replace(/\bshan't\b/gi, "shall not")
+      .replace(/n't\b/gi, " not").replace(/'ll\b/gi, " will").replace(/'re\b/gi, " are").replace(/'m\b/gi, " am")
+      .replace(/'ve\b/gi, " have").replace(/'d\b/gi, " would")
+      .replace(/\b(it|he|she|that|what|where|who|there|here|this)'s\b/gi, "$1 is");
+  }
+  // multi-word keys
+  var MULTI = Object.keys(LEX.idx).filter(function (k) { return k.indexOf(" ") > 0; })
+    .sort(function (a, b) { return b.split(" ").length - a.split(" ").length; });
+
+  function tokenize(sentence) {
+    var raw = sentence.match(/[A-Za-z][A-Za-z\-]*|'s|\d+|[.,;:!?]/g) || [];
+    var toks = [];
+    for (var i = 0; i < raw.length; i++) {
+      var matched = false;
+      for (var m = 0; m < MULTI.length && !matched; m++) {
+        var parts = MULTI[m].split(" ");
+        if (i + parts.length > raw.length) continue;
+        var ok = true;
+        for (var p = 0; p < parts.length; p++) if (raw[i + p].toLowerCase() !== parts[p]) { ok = false; break; }
+        if (ok) { toks.push({t:raw.slice(i, i + parts.length).join(" "), multi:MULTI[m]}); i += parts.length - 1; matched = true; }
+      }
+      if (!matched) toks.push({t:raw[i]});
+    }
+    return toks;
+  }
+
+  function translateSentence(sentence, opts) {
+    var toks = tokenize(expand(sentence));
+    var out = [];      // output items {f, en, kind}
+    var notes = [];
+    var tense = "";    // pending tense for next verb: ka | vi | tor
+    var neg = false, negWord = "na";
+    var adjBuf = [], quantified = false, possAfter = null, pendingPossessor = null, cmpWord = null;
+    var question = false, endPunct = "";
+    var PAST = opts.chronicle ? "tor" : "ka";
+    var lowers = toks.map(function (t) { return t.t.toLowerCase(); });
+    var last = toks.length ? toks[toks.length - 1].t : "";
+    if (/[.!?]/.test(last)) { endPunct = last; toks.pop(); lowers.pop(); }
+    if (endPunct === "?") question = true;
+
+    function emit(f, en, kind) { out.push({f:f, en:en, kind:kind || "word"}); }
+    function flushAdj() { adjBuf.forEach(function (a) { emit(a.f, a.en, "word"); }); adjBuf = []; }
+    function endNP() {
+      flushAdj();
+      if (possAfter) { emit("e " + possAfter.f, possAfter.en, "word"); possAfter = null; }
+      if (pendingPossessor) { emit("e " + pendingPossessor.f, pendingPossessor.en, "word"); pendingPossessor = null; }
+      quantified = false;
+    }
+    function emitVerb(f, en) {
+      endNP();
+      if (neg) { emit(negWord, negWord === "na" ? "not" : "never", "small"); neg = false; negWord = "na"; }
+      var form = tense ? suffix(f, tense) : f;
+      emit(form, en, "verb"); tense = "";
+    }
+    function nextIsVerbish(i) {
+      for (var j = i + 1; j < toks.length; j++) {
+        var lw = lowers[j];
+        if (lw === "not" || lw === "never") continue;
+        if (BE[lw]) return true;
+        var an = analyse(lw);
+        return has(an, "v") && !(lw in DET) && !(lw in POSS);
+      }
+      return false;
+    }
+    function verbAhead(i) { // an auxiliary "do" is followed (within a short subject) by a main verb
+      for (var j = i + 1; j < Math.min(toks.length, i + 6); j++) {
+        var lw = lowers[j];
+        if (lw === "not" || lw === "never" || lw in DET || lw in POSS || lw in PRON || lw in QUANT) continue;
+        var an = analyse(lw);
+        if (j > i + 1 && has(an, "v") && !an.some(function (r) { return r.feat.s || r.feat.past; })) return true;
+        if (j === i + 1 && has(an, "v") && !has(an, "n") && !/^[A-Z]/.test(toks[j].t)) return true;
+      }
+      return false;
+    }
+    // question inversion
+    var qAux = null, insertEsAfterSubject = false;
+    if (question && toks.length && /^(do|does|did|is|are|was|were|am|can|could|will|shall|would|have|has|had)$/.test(lowers[0])) {
+      qAux = lowers[0];
+      emit("ho", "(question)", "small");
+      if (qAux === "did" || qAux === "was" || qAux === "were" || qAux === "had") tense = PAST;
+      if (qAux === "will" || qAux === "shall" || qAux === "would") tense = "vi";
+      if (BE[qAux]) {
+        // copula question unless an -ing verb or past participle follows later
+        var later = lowers.slice(1).some(function (lw) { var a = analyse(lw); return a.some(function (r) { return r.feat.ing; }); });
+        insertEsAfterSubject = !later;
+      }
+      if (qAux === "can" || qAux === "could") { insertEsAfterSubject = "kunn"; }
+      toks.shift(); lowers.shift();
+    }
+    var subjectDone = false;
+    function maybeInsertEs(i) {
+      if (!insertEsAfterSubject || subjectDone) return;
+      // subject ends when the next token is not part of a noun phrase
+      var nx = lowers[i + 1];
+      var npPart = nx && (nx in DET || nx in POSS || nx in QUANT || nx === "'s" || nx === "of" ||
+        (function () { var a = analyse(nx); return has(a, "n") || has(a, "adj") || /^[A-Z]/.test(toks[i + 1].t); })());
+      if (!npPart) {
+        subjectDone = true;
+        endNP();
+        if (insertEsAfterSubject === "kunn") { emit(tense ? "kunn" + tense : "kunn", "can", "verb"); tense = ""; }
+        else { var f = tense ? "es" + tense : "es"; emit(f, "be", "verb"); tense = ""; }
+      }
+    }
+
+    for (var i = 0; i < toks.length; i++) {
+      var tok = toks[i], lw = lowers[i], word = tok.t;
+      if (tok.multi) {
+        var e = lookup(tok.multi)[0];
+        if (adjBuf.length || possAfter) {} // keep
+        emit(e.w, word, e.pos === "v" ? "verb" : "word"); if (e.pos !== "adj") endNP();
+        maybeInsertEs(i); continue;
+      }
+      if (/^[,;:]$/.test(word)) { endNP(); emit(word, word, "punct"); continue; }
+      if (lw === "'s") { // possessive: last noun phrase becomes the possessor of the next
+        var phrase = [];
+        while (out.length && out[out.length - 1].kind !== "verb" && out[out.length - 1].kind !== "punct" && out[out.length - 1].kind !== "small") {
+          var it = out.pop(); if (it.f === "o" || it.f === "an") continue; phrase.unshift(it);
+        }
+        flushAdj();
+        pendingPossessor = {f:phrase.map(function (p) { return p.f; }).join(" "), en:phrase.map(function (p) { return p.en; }).join(" ") + "'s"};
+        continue;
+      }
+      if (/^\d+$/.test(word)) { emit(DIGIT[word] || word, word, DIGIT[word] ? "word" : "unknown"); quantified = true; continue; }
+      if (lw === "not") { neg = true; negWord = "na"; continue; }
+      if (lw === "never") { neg = true; negWord = "naorru"; continue; }
+      if (lw === "there" && BE[lowers[i + 1]]) { continue; }
+      if (lw === "do" || lw === "does" || lw === "did") {
+        if (verbAhead(i)) { if (lw === "did") tense = PAST; continue; }
+      }
+      if (lw === "will" || lw === "shall" || lw === "would") { if (nextIsVerbish(i)) { tense = "vi"; continue; } }
+      if ((lw === "have" || lw === "has" || lw === "had") && i + 1 < toks.length) {
+        var nxa = analyse(lowers[i + 1] === "not" ? lowers[i + 2] || "" : lowers[i + 1]);
+        if (nxa.some(function (r) { return r.feat.pp && r.entries.some(function (x) { return x.pos === "v"; }); })) { tense = PAST; continue; }
+      }
+      if (lw === "can" || lw === "could") { emitVerb("kunn", "can"); if (lw === "could") out[out.length - 1].f = "kunn" + PAST; continue; }
+      if (lw === "must") { emitVerb("thar", "must"); continue; }
+      if (lw === "to" && nextIsVerbish(i) && i > 0) { continue; }
+      if (BE[lw]) {
+        var bt = PASTBE[lw] ? PAST : "";
+        if (lw === "been") bt = "";
+        if (tense) { bt = tense; }
+        // progressive: be + -ing -> tense moves to that verb
+        var nx2 = lowers[i + 1] === "not" ? i + 2 : i + 1;
+        var an2 = analyse(lowers[nx2] || "");
+        if (an2.some(function (r) { return r.feat.ing && r.entries.some(function (x) { return x.pos === "v"; }); })) {
+          if (bt) tense = bt; continue;
+        }
+        if (lowers[i + 1] === "not" || lowers[i + 1] === "never") { neg = true; negWord = lowers[i + 1] === "never" ? "naorru" : "na"; i++; nx2 = i + 1; an2 = analyse(lowers[nx2] || ""); }
+        tense = bt; emitVerb("es", "be");
+        // passive: be + past participle -> verb-ka as a description
+        if (an2.some(function (r) { return r.feat.pp && !r.feat.s && r.entries.some(function (x) { return x.pos === "v"; }); }) && !has(an2.filter(function (r) { return !r.feat.pp; }), "adj")) {
+          var pv = pick(an2, ["v"]); emit(pv.w + "ka", toks[nx2].t, "word"); i = nx2;
+        }
+        continue;
+      }
+      if (lw === "more" || lw === "most") {
+        var a3 = analyse(lowers[i + 1] || "");
+        if (has(a3, "adj")) { cmpWord = lw === "more" ? "ra" : "ul"; continue; }
+      }
+      if (lw === "than") { endNP(); emit("ro", "than", "small"); continue; }
+      if (lw === "of") { flushAdj(); emit("e", "of", "small"); continue; }
+      if (lw in DET && !(lw === "that" && i > 0 && nextIsVerbish(i))) {
+        var nextLw = lowers[i + 1];
+        if ((lw === "that" || lw === "this") && (!nextLw || nextIsVerbish(i) || BE[nextLw])) { emit(DET[lw], word, "word"); maybeInsertEs(i); continue; }
+        if (lw === "the" && pendingPossessor) continue;
+        emit(DET[lw], word, "small"); continue;
+      }
+      if (lw === "that" || ((lw === "which" || lw === "who") && i > 0)) { endNP(); emit("os", word, "small"); continue; }
+      if (lw === "her") {
+        var nxh = analyse(lowers[i + 1] || "");
+        if (has(nxh, "n") || has(nxh, "adj")) { possAfter = {f:"ha", en:"her"}; continue; }
+      }
+      if (lw in POSS && lw !== "her") { possAfter = {f:POSS[lw], en:word}; continue; }
+      if (lw in PRON) { endNP(); emit(PRON[lw], word, "word"); maybeInsertEs(i); continue; }
+      if (lw in QUANT) {
+        var anq = analyse(lowers[i + 1] || "");
+        if (has(anq, "n") || has(anq, "adj") || /^\d|^[A-Z]/.test((toks[i + 1] || {}).t || "")) { emit(QUANT[lw], word, "word"); quantified = true; continue; }
+      }
+      if (NAMES[lw] && (/^[A-Z]/.test(word) || lw === "teller")) {
+        flushAdj(); emit(NAMES[lw], word, "name"); endNP(); maybeInsertEs(i); continue;
+      }
+      var an = analyse(lw);
+      if (!an.length) {
+        if (/^[A-Z]/.test(word)) { flushAdj(); emit(word, word, "name"); endNP(); maybeInsertEs(i); continue; }
+        endNP(); emit("[" + word + "]", word, "unknown"); continue;
+      }
+      // choose a part of speech from context
+      var prev = i > 0 ? lowers[i - 1] : "";
+      var prevOut = out.length ? out[out.length - 1] : null;
+      var afterDet = prev in DET || prev in POSS || prev in QUANT || prev === "of" || adjBuf.length > 0 || /^\d+$/.test(prev) || prev === "'s";
+      var want;
+      if (afterDet) want = ["n", "adj", "pron", "v", "adv", "num", "prep", "conj", "det", "part", "name"];
+      else if (an.some(function (r) { return r.feat.past || r.feat.ing; })) want = ["v", "adj", "n", "adv", "prep", "conj", "det", "pron", "num", "part", "name"];
+      else if (prevOut && (prevOut.kind === "word" || prevOut.kind === "name") && !(prev in {in:1,on:1,at:1,to:1,from:1,with:1,by:1,for:1,into:1,through:1,under:1,over:1,upon:1,beneath:1,and:1,or:1})) want = ["v", "n", "adj", "adv", "prep", "conj", "det", "pron", "num", "part", "name"];
+      else if (prev === "to" || prev === "not") want = ["v", "n", "adj", "adv", "prep", "conj", "det", "pron", "num", "part", "name"];
+      else want = ["prep", "conj", "part", "adv", "pron", "det", "num", "n", "v", "adj", "name"];
+      // an adjective immediately before a noun stays an adjective
+      var nextAn = i + 1 < toks.length ? analyse(lowers[i + 1]) : [];
+      if (!afterDet && has(an, "adj") && has(nextAn, "n") && !has(an, "prep")) want = ["adj"].concat(want);
+      var ch = pick(an, want);
+      if (ch.pos === "v" && !ch.feat.past && !ch.feat.ing && afterDet) ch = pick(an, ["n", "adj"]) || ch;
+      if (ch.pos === "adj" && ch.feat.pp && !has(an.filter(function (r) { return !r.feat.pp; }), "adj")) ch = {w:ch.w + "ka", pos:"adj", feat:{}, lemma:ch.lemma};
+      var f = ch.w;
+      if (ch.pos === "v") {
+        if (ch.feat.past && !tense && !(i > 0 && (afterDet))) tense = PAST;
+        emitVerb(f, word); continue;
+      }
+      if (ch.pos === "adj") {
+        var c = ch.feat.cmp || cmpWord; cmpWord = null;
+        if (c) f = f + c;
+        // attributive if a noun follows, otherwise emit now (predicate)
+        if (has(nextAn, "n") || has(nextAn, "adj") && !has(nextAn, "prep")) { adjBuf.push({f:f, en:word}); continue; }
+        emit(f, word, "word"); continue;
+      }
+      if (ch.pos === "n") {
+        if (ch.feat.plural && !quantified) f = plural(f);
+        emit(f, word, "word");
+        var nl = lowers[i + 1];
+        if (!(nl === "'s")) endNP();
+        maybeInsertEs(i); continue;
+      }
+      endNP();
+      emit(f, word, ch.pos === "prep" || ch.pos === "conj" || ch.pos === "part" ? "small" : "word");
+      maybeInsertEs(i);
+    }
+    endNP();
+    if (insertEsAfterSubject && !subjectDone) emit(tense ? "es" + tense : "es", "be", "verb");
+    var text = out.map(function (o) { return o.f; }).join(" ").replace(/ ([,;:])/g, "$1");
+    if (opts.brynndu) text = brynndu(text);
+    if (text) text = text.charAt(0).toUpperCase() + text.slice(1);
+    return {text:text + (endPunct || (text ? "." : "")), items:out, end:endPunct || "."};
+  }
+  function brynndu(text) {
+    return text.split(" ").map(function (w) {
+      var cap = /^[A-Z]/.test(w);
+      var x = w.replace(/kh/gi, "h").replace(/([gdk])\1(?=$|[^a-z])/gi, "$1").replace(/([aeiouy])d([aeiouy])/gi, "$1dd$2");
+      return cap ? x.charAt(0).toUpperCase() + x.slice(1) : x;
+    }).join(" ");
+  }
+  function translate(text, opts) {
+    opts = opts || {};
+    var sentences = (text.match(/[^.!?]+[.!?]*/g) || []).map(function (s) { return s.trim(); }).filter(Boolean);
+    return sentences.map(function (s) { return translateSentence(s, opts); });
+  }
+  function runeLetters(word) { return word.toLowerCase().match(/th|kh|ch|[a-z]/g) || []; }
+  return {translate:translate, runeLetters:runeLetters, analyse:analyse};
+})();
+if (typeof module !== "undefined") module.exports = FG;
+
+</script>
+<script>
+(function(){
+  var KIND={n:"noun",v:"verb",adj:"quality",adv:"adverb",pron:"pronoun",prep:"place word",conj:"joining word",num:"number",part:"particle",det:"pointer",name:"name"};
+  var SAMPLES=["The Avaggdu sank Rivenrook in elder days.","Where is the underhall?","Ulfar's hammer is harder than iron.","The ravens did not find the hidden road.","We will keep the records forever.","Gunlaug kept his secrets because he feared corruption."];
+  var $=function(id){return document.getElementById(id)};
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+
+  // ---- rune drawing ----
+  function glyph(strokes,x,y,sc,sw){
+    return strokes.map(function(pl){return '<polyline points="'+pl.map(function(p){return (x+p[0]*sc).toFixed(1)+","+(y+p[1]*sc).toFixed(1)}).join(" ")+'" fill="none" stroke="currentColor" stroke-width="'+sw+'" stroke-linecap="square" stroke-linejoin="miter"/>'}).join("");
+  }
+  function runeLine(sentences,sc){
+    sc=sc||2.2; var sw=Math.max(1.6,sc*0.85), cw=10*sc, gap=sc*2.4, x=4, parts=[], h=24*sc+8;
+    sentences.forEach(function(s){
+      var words=s.text.replace(/[.!?,;:]/g," ").split(/\s+/).filter(Boolean);
+      words.forEach(function(w,wi){
+        if(/^\[/.test(w)){parts.push('<text x="'+(x+cw/2)+'" y="'+(13*sc)+'" text-anchor="middle" font-size="'+(9*sc)+'" fill="currentColor" opacity=".45">?</text>');x+=cw+gap;}
+        else FG.runeLetters(w).forEach(function(L){var k=L.toUpperCase();if(STROKES[k]){parts.push(glyph(STROKES[k],x,4,sc,sw));x+=cw+gap;}});
+        if(wi<words.length-1){parts.push('<rect x="'+(x)+'" y="'+(10*sc)+'" width="'+(sc*1.4)+'" height="'+(sc*1.4)+'" fill="currentColor"/>');x+=sc*1.4+gap*1.6;}
+      });
+      parts.push('<rect x="'+x+'" y="'+(7*sc)+'" width="'+(sc*1.4)+'" height="'+(sc*1.4)+'" fill="currentColor"/><rect x="'+x+'" y="'+(13*sc)+'" width="'+(sc*1.4)+'" height="'+(sc*1.4)+'" fill="currentColor"/>');
+      x+=sc*1.4+gap*4;
+    });
+    return '<svg xmlns="http://www.w3.org/2000/svg" width="'+Math.ceil(x)+'" height="'+h+'" viewBox="0 0 '+Math.ceil(x)+' '+h+'" role="img" aria-label="Fotheged runes">'+parts.join("")+'</svg>';
+  }
+
+  // ---- pronunciation ----
+  var VSND={a:"ah",e:"eh",i:"ee",o:"oh",u:"oo",y:"ih"};
+  var CSND={ch:"sh",kh:"kh",th:"th",dd:"dh"};
+  function sayWord(w,bryn){
+    var lw=w.toLowerCase();
+    var L=bryn?(lw.match(/dd(?=[aeiouy])|th|kh|ch|[a-z]/g)||[]):(lw.match(/th|kh|ch|[a-z]/g)||[]);
+    if(bryn) L=L.map(function(x){return x==="dd"?"dd":x});
+    var isV=function(x){return /^[aeiouy]$/.test(x)};
+    // split into syllables: each vowel is a nucleus; one consonant between vowels starts the next syllable, two are shared out
+    var vi=[];L.forEach(function(x,i){if(isV(x))vi.push(i)});
+    if(!vi.length)return lw;
+    var cuts=[];
+    for(var k=0;k<vi.length-1;k++){
+      var a=vi[k],b=vi[k+1],n=b-a-1;
+      if(n<=1)cuts.push(a+1);
+      else if(L[b-1]==="r"&&L[b-2]!=="r")cuts.push(b-2); // a consonant plus r starts the next syllable
+      else cuts.push(b-1);
+    }
+    var syl=[],start=0;cuts.forEach(function(c){syl.push(L.slice(start,c));start=c});syl.push(L.slice(start));
+    var parts=syl.map(function(sl,si){
+      // a doubled consonant closing a syllable is written once
+      if(sl.length>2&&sl[sl.length-1]===sl[sl.length-2]&&!isV(sl[sl.length-1]))sl=sl.slice(0,-1);
+      return sl.map(function(x){return VSND[x]||CSND[x]||x}).join("");
+    });
+    if(parts.length>1)parts[0]=parts[0].toUpperCase();
+    return parts.join("-");
+  }
+  function say(text,bryn){
+    return text.replace(/\[[^\]]*\]/g,"(?)").split(/(\s+|[.,;:!?])/).map(function(t){return /^[A-Za-z]+$/.test(t)?sayWord(t,bryn):t}).join("");
+  }
+
+  // ---- voice: the browser's own speech engine ----
+  // A Spanish voice from Spain is the closest match to Fotheged: pure five vowels, a tapped R and rolled RR,
+  // Z for the soft TH of "thin" and J for the KH of "loch". Words are respelled for it and given a written
+  // accent on their first syllable, where Fotheged puts its stress.
+  var synth=window.speechSynthesis, queue=[], voices=[];
+  var GOOD=/natural|neural|online|premium|enhanced|google|siri|daniel|serena|kate|arthur|libby|ryan|sonia|elvira|alvaro|monica|jorge|paulina/i;
+  var ACC={a:"á",e:"é",i:"í",o:"ó",u:"ú",y:"í"};
+  var ESMAP={th:"z",kh:"j",ch:"ch",ll:"l",nn:"n",gg:"g",dd:"d",kk:"k",bb:"b",pp:"p",tt:"t",ss:"s",mm:"m",ff:"f",rr:"rr",h:"j",y:"i",w:"u",v:"b"};
+  function toSpanish(word){
+    var L=word.toLowerCase().match(/th|kh|ch|ll|nn|gg|dd|kk|bb|pp|tt(?!h)|ss|mm|ff|rr|[a-z]/g)||[];
+    var nv=L.filter(function(x){return /^[aeiouy]$/.test(x)}).length, first=true;
+    return L.map(function(x,i){
+      if(/^[aeiouy]$/.test(x)){var v=x==="y"?"i":x;if(first&&nv>1){first=false;return ACC[x]}first=false;return v}
+      if(x==="g"&&/^[eiy]$/.test(L[i+1]||""))return "gu";
+      return ESMAP[x]||x;
+    }).join("");
+  }
+  function loadVoices(){
+    var lang=$("accent").value;
+    var all=synth.getVoices()||[];
+    if(lang==="es"&&!all.some(function(v){return /^es/i.test(v.lang)})&&all.length){$("accent").value="en";lang="en";$("speakstatus").textContent="No Spanish voice on this device, so using English.";}
+    voices=all.filter(function(v){return new RegExp("^"+lang,"i").test(v.lang)});
+    voices.sort(function(a,b){
+      var s=function(v){return (GOOD.test(v.name)?2:0)+(lang==="es"&&/es-ES/i.test(v.lang)?1:0)};
+      return s(b)-s(a)});
+    var keep=null;try{keep=localStorage.getItem("fg-voice-"+lang)}catch(e){}
+    // "Phone's default" leaves the voice unset, so the device uses the voice chosen in its own text-to-speech settings.
+    $("voice").innerHTML='<option value="-1">Phone\'s default voice</option>'+voices.map(function(v,i){return '<option value="'+i+'">'+esc(v.name.replace(/Microsoft |Google /,""))+" ("+esc(v.lang)+")"+(GOOD.test(v.name)?" ★":"")+'</option>'}).join("");
+    $("voice").value="-1";
+    voices.forEach(function(v,i){if(v.name===keep)$("voice").value=String(i)});
+    $("vmodewrap").hidden=(lang==="es");
+  }
+  function phrases(){
+    var lang=$("accent").value, mode=lang==="es"?"fg":$("vmode").value;
+    var text=mode==="fg"?last:$("phon").textContent;
+    return text.split(/(?<=[.!?;:])\s+/).map(function(sent){
+      return sent.replace(/\(\?\)|\[[^\]]*\]/g," ").split(/\s+/).filter(Boolean).map(function(w){
+        var end=(w.match(/[.,;:!?]+$/)||[""])[0]; w=w.replace(/[.,;:!?]+$/,"");
+        if(lang==="es") w=toSpanish(w);
+        else if(mode==="say") w=w.split("-").map(function(x){return x.toLowerCase().replace(/kh/g,"k").replace(/dh/g,"th").replace(/ah$/,"a").replace(/oh$/,"o")}).join("");
+        return w+end;
+      }).join(" ");
+    }).filter(Boolean);
+  }
+  function stop(){queue=[];synth.cancel();$("speak").textContent="Speak"}
+  function next(){
+    if(!queue.length){$("speak").textContent="Speak";return}
+    var u=new SpeechSynthesisUtterance(queue.shift());
+    var v=voices[+$("voice").value]; if(v){u.voice=v;u.lang=v.lang}else u.lang=$("accent").value==="es"?"es-ES":"en-GB";
+    u.rate=+$("rate").value; u.pitch=+$("pitch").value;
+    u.onend=function(){setTimeout(next,260)}; u.onerror=function(){stop()};
+    synth.speak(u);
+  }
+  if(synth&&window.SpeechSynthesisUtterance){
+    $("speak").hidden=false;$("voicebar").hidden=false;
+    try{var acc=localStorage.getItem("fg-accent");if(acc)$("accent").value=acc}catch(e){}
+    loadVoices();
+    if("onvoiceschanged" in synth)synth.onvoiceschanged=loadVoices;
+    $("accent").addEventListener("change",function(){$("speakstatus").textContent="";try{localStorage.setItem("fg-accent",$("accent").value)}catch(e){}loadVoices()});
+    $("voice").addEventListener("change",function(){try{var v=voices[+$("voice").value];localStorage.setItem("fg-voice-"+$("accent").value,v?v.name:"")}catch(e){}});
+    try{var pt=localStorage.getItem("fg-pitch");if(pt)$("pitch").value=pt}catch(e){}
+    $("pitch").addEventListener("change",function(){try{localStorage.setItem("fg-pitch",$("pitch").value)}catch(e){}});
+    $("speak").addEventListener("click",function(){
+      try{
+        if(synth.speaking||queue.length){stop();return}
+        queue=phrases(); $("speak").textContent="Stop"; next();
+      }catch(e){$("speakstatus").textContent="This browser could not play the voice."}
+    });
+  }
+
+  // ---- translate ----
+  var last="";
+  function run(){
+    var res=FG.translate($("en").value,{chronicle:$("chron").checked,brynndu:$("bryn").checked});
+    last=res.map(function(r){return r.text}).join(" ");
+    $("out").innerHTML=res.length?res.map(function(r){return esc(r.text).replace(/\[([^\]]+)\]/g,'<span class="unk">$1</span>')}).join(" "):'<span class="status">Type a sentence on the left.</span>';
+    $("runes").innerHTML=res.length?runeLine(res):"";
+    $("phon").textContent=res.length?say(last,$("bryn").checked):"";
+    $("phonbryn").hidden=!$("bryn").checked;
+    var unknown=[],html=[];
+    res.forEach(function(r){r.items.forEach(function(it){
+      if(it.kind==="punct")return;
+      if(it.kind==="unknown")unknown.push(it.en);
+      html.push('<div class="pair '+it.kind+'"><b>'+esc(it.kind==="unknown"?it.en:it.f)+'</b><span>'+esc(it.kind==="unknown"?"not in the dictionary":it.en)+'</span></div>');
+    })});
+    $("pairs").innerHTML=html.join("");
+    var m=$("missing");
+    if(unknown.length){m.hidden=false;m.textContent="Not yet in the dictionary: "+unknown.join(", ")+". Ask Claude in the project to coin these words.";}else m.hidden=true;
+    $("status").textContent="";
+  }
+  ["en","chron","bryn"].forEach(function(id){$(id).addEventListener("input",run);$(id).addEventListener("change",run)});
+  SAMPLES.forEach(function(s){var b=document.createElement("button");b.type="button";b.textContent=s;b.addEventListener("click",function(){$("en").value=s;run()});$("samples").appendChild(b)});
+  $("copy").addEventListener("click",function(){
+    var done=function(){$("status").textContent="Copied"};
+    try{navigator.clipboard.writeText(last).then(done,function(){sel()})}catch(e){sel()}
+    function sel(){var r=document.createRange();r.selectNodeContents($("out"));var s=getSelection();s.removeAllRanges();s.addRange(r);$("status").textContent="Selected. Press Ctrl+C or Cmd+C to copy."}
+  });
+
+  // ---- tabs ----
+  var SECS={translate:"translate",dictionary:"dictionary",runes:"runes-sec"};
+  document.querySelectorAll("nav button").forEach(function(b){b.addEventListener("click",function(){
+    document.querySelectorAll("nav button").forEach(function(x){x.setAttribute("aria-selected",x===b?"true":"false")});
+    Object.keys(SECS).forEach(function(k){$(SECS[k]).hidden=(k!==b.dataset.tab)});
+  })});
+
+  // ---- dictionary ----
+  var themes=[];LEX.rows.forEach(function(r){if(themes.indexOf(r.c)<0)themes.push(r.c)});
+  $("theme").innerHTML='<option value="">All themes</option>'+themes.map(function(t){return '<option>'+esc(t)+'</option>'}).join("");
+  function dict(){
+    var q=$("q").value.trim().toLowerCase(),t=$("theme").value;
+    var rows=LEX.rows.filter(function(r){return(!t||r.c===t)&&(!q||r.w.toLowerCase().indexOf(q)>=0||r.g.toLowerCase().indexOf(q)>=0)});
+    $("dict").innerHTML=rows.map(function(r){return '<tr><td class="fg">'+esc(r.w)+'</td><td>'+esc(r.g)+'</td><td>'+r.p.map(function(p){return KIND[p]||p}).join(", ")+'</td><td class="from">'+esc(r.n)+'</td></tr>'}).join("");
+    $("count").textContent=rows.length+" of "+LEX.rows.length+" words";
+  }
+  $("q").addEventListener("input",dict);$("theme").addEventListener("change",dict);
+
+  // ---- rune grid ----
+  $("runegrid").innerHTML=RUNEINFO.map(function(r){
+    return '<div class="rune"><svg width="60" height="80" viewBox="0 0 60 80" aria-hidden="true">'+glyph(STROKES[r[0]],10,3,3.2,3)+'</svg><b>'+r[0]+'</b><span>'+esc(r[1])+'</span><i>'+esc(r[2])+'</i><span>'+esc(r[3])+'</span></div>';
+  }).join("");
+  $("headrunes").innerHTML=runeLine([{text:"Fotheged"}],1.8);
+
+  try{run();dict();}catch(e){$("out").textContent="Something went wrong while translating: "+e.message;}
+})();
+</script>
+
+<script>
+if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){})})}
+</script>
+</body>
+</html>
