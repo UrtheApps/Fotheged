@@ -1,5 +1,5 @@
 // Offline support. The version changes with every build, so a new push replaces the old cache.
-const VERSION = "fotheged-34dab481ca";
+const VERSION = "fotheged-5990bd68bd";
 const CORE = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(VERSION).then(c => c.addAll(CORE)).then(() => self.skipWaiting()));
